@@ -1,0 +1,301 @@
+/* =============================================================
+   BAATMEEDAR — Stage Sections (1, 2, 3) & Progress Tracker
+   ============================================================= */
+
+/* ── Results wrapper ─────────────────────────────────────────── */
+#results-area {
+  padding-bottom: var(--sp-12);
+}
+
+/* ── Progress Tracker ────────────────────────────────────────── */
+.progress-section {
+  padding: var(--sp-5) 0;
+  border-bottom: 1px solid var(--rule-light);
+}
+
+.progress-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: var(--sp-3);
+}
+
+.progress-track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--rule-light);
+  color: var(--ink-faint);
+  background: var(--bg);
+  white-space: nowrap;
+}
+
+.progress-step.done {
+  border-color: var(--rule-mid);
+  color: var(--ink);
+  background: var(--bg-inset);
+}
+
+.progress-step.done .step-mark { color: var(--green); font-weight: 700; }
+
+.progress-step.active {
+  border-color: var(--ink);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.progress-step.active .step-mark { color: var(--ink); }
+
+.progress-step.error {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.progress-connector {
+  font-size: 11px;
+  color: var(--rule-light);
+  padding: 0 var(--sp-1);
+}
+
+/* ── Server wakeup notice ────────────────────────────────────── */
+.wakeup-notice {
+  margin-top: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--rule-mid);
+  background: var(--bg-inset);
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-muted);
+}
+
+/* ── Generic stage section ───────────────────────────────────── */
+.stage-section {
+  padding: var(--sp-6) 0;
+  border-bottom: 1px solid var(--rule-light);
+}
+
+/* ── Stage 1 — Source Info ───────────────────────────────────── */
+.source-text-preview {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-mid);
+  max-height: 200px;
+  overflow: hidden;
+  position: relative;
+}
+
+.source-text-preview.expanded {
+  max-height: none;
+}
+
+.show-more-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  cursor: pointer;
+  margin-top: var(--sp-2);
+  text-decoration: underline;
+}
+
+.show-more-btn:hover { color: var(--red); }
+
+/* ── Stage 2 — Claims ────────────────────────────────────────── */
+.claims-summary {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--rule-light);
+}
+
+.claim-item {
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--rule-light);
+}
+
+.claim-item:last-child {
+  border-bottom: none;
+}
+
+.claim-item-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+
+.claim-number {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.claim-domain {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border: 1px solid var(--rule-light);
+  padding: 1px 6px;
+}
+
+.claim-temporal {
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+
+.claim-text {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+  font-style: italic;
+  padding-left: var(--sp-3);
+  border-left: 2px solid var(--rule-mid);
+}
+
+.removed-opinions {
+  margin-top: var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--rule-light);
+  background: var(--bg-inset);
+}
+
+.removed-opinions .ro-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: var(--sp-2);
+}
+
+.removed-item {
+  font-size: 12px;
+  color: var(--ink-muted);
+  font-style: italic;
+  padding: var(--sp-1) 0;
+  border-bottom: 1px solid var(--rule-light);
+}
+
+.removed-item:last-child { border-bottom: none; }
+
+/* ── Stage 3 — Research ──────────────────────────────────────── */
+.research-claim-block {
+  padding: var(--sp-5) 0;
+  border-bottom: 1px solid var(--rule-light);
+}
+
+.research-claim-block:last-child { border-bottom: none; }
+
+.research-claim-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: var(--sp-2);
+}
+
+.research-claim-quote {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-mid);
+  padding-left: var(--sp-3);
+  border-left: 2px solid var(--rule-mid);
+  margin-bottom: var(--sp-4);
+}
+
+/* Sub-sections within Stage 3 */
+.research-subsection {
+  margin-bottom: var(--sp-5);
+}
+
+.research-sub-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--rule-light);
+  margin-bottom: var(--sp-3);
+}
+
+.research-plan-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-mid);
+}
+
+.analysis-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-mid);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--rule-light);
+  background: var(--bg-inset);
+}
+
+.analysis-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: var(--sp-2);
+}
+
+/* Loading skeleton — text-based */
+.skeleton-line {
+  display: block;
+  height: 12px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--rule-light) 0,
+    var(--rule-light) 60%,
+    var(--bg) 60%,
+    var(--bg) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+  margin-bottom: var(--sp-2);
+}
+
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (max-width: 640px) {
+  .progress-track { flex-direction: column; align-items: flex-start; }
+  .progress-connector { display: none; }
+}

@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Version control & CI
+.git
+.gitignore
+.github
+
+# IDE & agent config
+.gemini
+.agents
+.vscode
+
+# Documentation (not needed in image)
+docs
+prompts
+*.md
+
+# Tests & coverage
+tests
+coverage
+
+# Docker & deployment config
+docker-compose*.yml
+render.yaml
+firebase.json
+.firebaserc
+.firebase
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

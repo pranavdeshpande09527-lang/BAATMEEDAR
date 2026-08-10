@@ -1,0 +1,46 @@
+{
+  "name": "baatmeedar-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Baatmeedar backend — The Gatekeeper of Truth verification service",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:validation": "vitest run tests/validation",
+    "test:middleware": "vitest run tests/middleware",
+    "test:services": "vitest run tests/services",
+    "test:auth": "vitest run tests/auth",
+    "test:logging": "vitest run tests/logging",
+    "migrate": "node src/db/migrate.js",
+    "migrate:down": "node src/db/migrate.js --down",
+    "migrate:status": "node src/db/migrate.js --status",
+    "post-deploy": "node scripts/post-deploy.js",
+    "check-deps": "node scripts/check-deps.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "groq-sdk": "^0.9.0",
+    "helmet": "^8.0.0",
+    "pg": "^8.13.1",
+    "pino": "^9.6.0",
+    "pino-http": "^10.4.0",
+    "uuid": "^11.0.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0",
+    "supertest": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

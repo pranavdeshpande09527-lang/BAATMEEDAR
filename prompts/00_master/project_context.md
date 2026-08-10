@@ -6,7 +6,6 @@
 
 The project’s central promise is not to sound certain. It is to make the verification process understandable: what was claimed, what information was retrieved, which evidence supports or conflicts with the claim, what independent evaluators concluded, and what remains uncertain.
 
-Expected deliverables are a working prototype, a GitHub repository, an accurate README, and a 2–3 minute demonstration. Evaluation focuses on innovation, real agentic workflow, functioning integrations, prompt quality, user experience, and practical impact.
 
 ## Canonical five-stage workflow
 
@@ -70,30 +69,3 @@ Use the most direct and authoritative available evidence. Reputable reporting is
 | General and history | Archives, academic institutions, museums, primary sources, reputable reference works |
 
 Always compare a source’s date, jurisdiction, population, and scope with the claim. A lack of evidence is not evidence of falsehood.
-
-## Components and integrations
-
-| Component | Role |
-| --- | --- |
-| Gemini | Stage 2 claim extraction; Stage 3 coverage analysis; one independent Stage 4 verifier |
-| Hermes | Claim-specific research planning and orchestration; no final verdicts |
-| Tavily | Web source discovery and article retrieval/extraction |
-| Groq | Stage 3 independent context, logic, and counterevidence analysis |
-| Grok/xAI | Independent Stage 4 verification |
-| Supabase / PostgreSQL | Candidate primary persistence path for runs, claims, evidence, and user data |
-| Firebase | Optional app service; do not duplicate Supabase’s role without an explicit architecture decision |
-| YouTube transcript provider | Transcript enrichment for YouTube inputs |
-| Render | Candidate backend deployment target |
-| Brevo / SMTP | Optional transactional email and notifications |
-
-`GROQ_API_KEY` is available in the environment template, but no documented Grok/xAI key is yet present. A real Grok integration therefore needs an explicit, clearly named configuration variable; otherwise, show a visible development stub rather than pretending an independent verification took place.
-
-## Security and configuration context
-
-The environment template lists Supabase, Firebase, backend, AI/research, email, and YouTube settings. It contains placeholders only. Secret credentials belong on the backend and in local/deployment environment variables, never in prompts, source control, browser code, logs, screenshots, or error messages. Browser-safe Supabase/Firebase configuration still requires server-side authorization controls, Supabase RLS, and/or Firebase security rules.
-
-## Current repository truth
-
-At present, this repository contains product documentation, a workflow diagram, an environment template, a security checklist, the Hermes planning prompt, and an organized prompt-library skeleton. The `src` directory is empty, most topic prompt files are empty placeholders, and no application framework, database schema, or deployed service is committed.
-
-Do not claim that an implementation, integration, or framework exists until it is actually added and tested. When implementation begins, select one primary data/authentication path for the prototype, document material choices, and favor a small, transparent end-to-end vertical slice over disconnected screens.

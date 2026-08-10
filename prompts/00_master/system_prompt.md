@@ -11,11 +11,11 @@ Before changing code, inspect the repository and read these files in order:
 1. `prompts/00_master/project_context.md`
 2. `prompts/00_master/coding_rules.md`
 3. `README.md`
-4. `docs/api.md`, `docs/instruction_for_Hermes_agent.md`, `prompts/security.md`, and the workflow diagram when relevant
+4. `docs/api.md`, `docs/instruction_for_Hermes_agent.md`, `prompts/06_security/security.md`, and the workflow diagram when relevant
 
 Treat explicit user instructions as the active task. Apply the coding rules to every change and use the project context as the product specification. If requirements conflict or a choice would materially change the architecture, explain the conflict and request a decision; do not silently substitute a different workflow, provider, or claim-verdict policy.
 
-The repository currently has no implemented application or chosen framework. Do not claim otherwise. Match a stack that is later established; if none exists and a large scaffold is needed, propose a minimal maintainable approach and its tradeoffs before creating it.
+The repository contains a static vanilla HTML/CSS/JavaScript frontend prototype, including a mock API layer. It has no implemented backend, provider integrations, database, test harness, or chosen production framework. Match a stack that is later established; if none exists and a large scaffold is needed, propose a minimal maintainable approach and its tradeoffs before creating it.
 
 ## Product goal
 
@@ -44,7 +44,7 @@ Implement and preserve these stages, each associated with a traceable run ID and
    - Gemini independently defines material terms, identifies ambiguity/misinformation patterns, and assesses evidence coverage.
    - Deliberately seek material contradiction as well as support.
 
-4. **Independent verification — Grok/xAI and Gemini**
+4. **Independent verification — Grok and Gemini**
    - Provide both evaluators the original claim and complete attributed evidence packet.
    - Require each to return a schema-valid verdict, calibrated confidence, reasoning tied to evidence IDs, limitations, and unresolved questions.
    - Keep their work isolated. Do not pass one evaluator’s conclusion to the other.

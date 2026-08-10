@@ -13,8 +13,8 @@ import { getLogger } from '../logging/logger.js';
 
 let pool = null;
 
-// Initialize Postgres connection pool if DATABASE_URL is present
-if (config.supabase.databaseUrl) {
+// Initialize Postgres connection pool if DATABASE_URL is present AND not in test mode without real DB
+if (config.supabase.databaseUrl && !config.isTest) {
   pool = new Pool({
     connectionString: config.supabase.databaseUrl,
     ssl: config.isProd || config.supabase.databaseUrl.includes('supabase')

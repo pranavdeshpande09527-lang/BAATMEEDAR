@@ -8,16 +8,31 @@ describe('5-Stage Workflow Orchestration (with test fakes)', () => {
 
   it('runs complete 5-stage pipeline end-to-end and produces renderer-compatible results', async () => {
     const runId = '00000000-0000-0000-0000-000000000001';
+    const owner = { type: 'guest', id: 'guest-test-session' };
+
+    // Register run in repository
+    await orchestrator.repo.create({
+      id: runId,
+      input_type: 'text',
+      content: 'The World Health Organization declared mpox a Public Health Emergency of International Concern in 2024.',
+      owner_type: owner.type,
+      owner_id: owner.id,
+    });
+
+    // Execute 5-stage pipeline
     await orchestrator.startRun(runId, {
       input_type: 'text',
       content: 'The World Health Organization declared mpox a Public Health Emergency of International Concern in 2024.',
     });
 
-    const status = await orchestrator.repo.getStatus(runId);
+    // Check status
+    const status = await orchestrator.repo.getStatus(runId, owner);
+    expect(status).not.toBeNull();
     expect(status.status).toBe('complete');
     expect(status.current_stage).toBe('complete');
 
-    const results = await orchestrator.repo.getResults(runId);
+    // Check full renderer-compatible results
+    const results = await orchestrator.repo.getResults(runId, owner);
     expect(results.run_id).toBe(runId);
     expect(results.claims.length).toBeGreaterThan(0);
     expect(results.claims[0].text).toContain('mpox');

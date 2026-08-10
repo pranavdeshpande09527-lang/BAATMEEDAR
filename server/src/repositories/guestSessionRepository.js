@@ -37,6 +37,21 @@ class InMemoryGuestSessionStore {
     }
     return s;
   }
+
+  linkToAccount(guestSessionId, userId, requestedRunIds) {
+    const linkedIds = [];
+    const skipped = [];
+    const s = this.get(guestSessionId);
+
+    for (const runId of requestedRunIds) {
+      if (s && s.allowed_run_ids.includes(runId)) {
+        linkedIds.push(runId);
+      } else {
+        skipped.push({ run_id: runId, reason: 'not_owned_by_guest_session' });
+      }
+    }
+    return { linked_ids: linkedIds, skipped };
+  }
 }
 
 const memoryStore = new InMemoryGuestSessionStore();
@@ -69,8 +84,9 @@ export const guestSessionRepository = {
            END;`,
         [sessionId, runId, expiresAt]
       );
+      return this.get(sessionId);
     } catch (err) {
-      memoryStore.addRunId(sessionId, runId);
+      return memoryStore.addRunId(sessionId, runId);
     }
   },
 
@@ -78,16 +94,12 @@ export const guestSessionRepository = {
    * Atomically transfers guest runs to an authenticated account.
    */
   async linkToAccount(guestSessionId, userId, requestedRunIds) {
+    if (!db.pool) return memoryStore.linkToAccount(guestSessionId, userId, requestedRunIds);
+
     const linkedIds = [];
     const skipped = [];
 
     for (const runId of requestedRunIds) {
-      if (!db.pool) {
-        // Memory fallback handling
-        linkedIds.push(runId);
-        continue;
-      }
-
       try {
         const { rows } = await db.query(
           `UPDATE verification_runs

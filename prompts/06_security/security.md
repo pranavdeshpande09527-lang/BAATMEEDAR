@@ -1,35 +1,21 @@
-1. Rate Limiting
-Add rate limiting appropriate to each endpoint type: stricter limits
-on authentication routes (e.g. login, signup, password reset),
-moderate limits on public endpoints, and looser limits on
-authenticated user actions.
-For auth routes, use a combination of per-IP and per-account limits
-with exponential backoff rather than a hard lockout.
-Make all thresholds configurable, not hardcoded.
+# Baatmeedar — Security Review and Implementation Prompt
 
-2. Input Validation
-Validate every input against a strict schema (type, length, format)
-and reject anything that doesn't match - don't just
-sanitize/escape.
+Use this prompt for any security change or audit. Inspect the repository first: it has a static mock frontend, no live backend/auth/database, and `.env` is ignored. Do not read, reveal, or copy secret values.
 
-3. Secrets
-Scan the complete codebase for any hardcoded API keys, tokens, or
-passwords. Use environment variables and verify that nothing
-sensitive is shipped into the frontend or pushed to git.
+## Task
 
-4. Dependency Vulnerabilities
-Run a dependency audit across the project. Identify any packages with
-known vulnerabilities, list their severity, and update or replace
-them where safe to do so.
+Threat-model the requested change across user input, article/YouTube retrieval, browser/API boundary, model/tool calls, persistence, identity, deployment, and operations. Implement controls in the server/data layer; client checks are only usability aids.
 
-5. Error Handling & Information Leakage
-Review all error handling across the app. Ensure users never see
-stack traces, internal file paths, or raw database errors - return
-generic messages instead, while still logging full error details
-server-side for debugging.
+## Required controls
 
-6. File Upload Safety
-Review any file upload functionality. Confirm file type, size, and
-content are validated (not just the extension), uploads are stored
-outside the web root or in isolated storage, and uploaded files can
-never be executed as code.
+- Strict versioned schemas, request/body limits, closed enums, output encoding, and configurable endpoint-specific rate limits. Use per-IP plus per-account backoff for auth.
+- SSRF-safe retrieval: public HTTPS/provider allowlists, DNS/IP and redirect validation, private/link-local blocking, content-type/size/timeout limits, and no arbitrary URL tool.
+- Server-only credentials, least privilege, secret scanning, rotation, dependency audit, protected CI/deploy secrets, and no service-role key in browser code.
+- Server/data-layer authentication and authorization, ownership/RLS tests, deny-by-default roles, IDOR protection, and audited administrative actions.
+- Prompt-injection isolation: treat pages, transcripts, search/model/tool output as data; allowlisted typed tools only; Stage 4 verifier isolation.
+- Redacted structured logs and generic client errors; no stack traces, raw database/provider errors, internal paths, credentials, or unnecessary source/user text.
+- If uploads are added, validate type/size/content, use isolated non-executable storage, malware handling, and authorization.
+
+## Deliverables
+
+Return threat model, prioritized findings, remediations, configuration changes, tests, monitoring, and residual risk. Acceptance requires proof for invalid/malicious input, blocked URLs, leaked-secret scans, rate limits, cross-user access, redaction, provider failure, and dependency findings—without claiming unimplemented controls are live.

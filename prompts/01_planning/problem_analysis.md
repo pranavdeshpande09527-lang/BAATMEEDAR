@@ -7,7 +7,7 @@ Read these project sources before responding:
 1. `prompts/00_master/project_context.md`
 2. `prompts/00_master/coding_rules.md`
 3. `README.md`
-4. `docs/api.md`, `docs/instruction_for_Hermes_agent.md`, and `prompts/security.md` when relevant
+4. `docs/api.md`, `docs/instruction_for_Hermes_agent.md`, and `prompts/06_security/security.md` when relevant
 
 The repository is currently a specification and prompt library; it has no committed application framework or implementation. Do not claim that a service, database, endpoint, model integration, or UI already exists unless the supplied task proves it.
 

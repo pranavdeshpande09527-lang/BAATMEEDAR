@@ -38,6 +38,6 @@ Create a clear workflow:
 2. Stage 1: show extracted/source information.
 3. Stage 2: show Gemini-processed domain and opinion-free claims.
 4. Stage 3: show claim research from Hermes search planning, Tavily web search, Groq, and Gemini.
-5. Final Verdict: show separate Grok and Gemini verdicts for every claim, including True/False status, evidence summary, and source references.
+5. Final Verdict: show separate Grok and Gemini verdicts for every claim, using `supported`, `contradicted`, or `inconclusive` status, evidence summary, and source references.
 
 Use newspaper-style columns, thin rules, uppercase section labels, strong hierarchy, and dense but readable editorial typography.

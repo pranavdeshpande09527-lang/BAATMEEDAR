@@ -32,10 +32,14 @@ const envSchema = z.object({
   // AI Providers
   GEMINI_API_KEY: z.string().min(1).default(isTestEnv ? 'test-gemini-key' : undefined),
   GROQ_API_KEY: z.string().min(1).default(isTestEnv ? 'test-groq-key' : undefined),
+  XAI_API_KEY: z.string().min(1).default(isTestEnv ? 'test-xai-key' : undefined),
 
   // Research & Retrieval
   TAVILY_API_KEY: z.string().min(1).default(isTestEnv ? 'test-tavily-key' : undefined),
   YOUTUBE_API_KEY: z.string().default(''),
+
+  // Email
+  RESEND_API_KEY: z.string().min(1).default(isTestEnv ? 'test-resend-key' : undefined),
 
   // CORS
   CORS_ORIGINS: z.string().default('http://localhost:5500'),
@@ -93,8 +97,10 @@ export const config = Object.freeze({
   providers: Object.freeze({
     gemini: Object.freeze({ apiKey: env.GEMINI_API_KEY }),
     groq: Object.freeze({ apiKey: env.GROQ_API_KEY }),
+    xai: Object.freeze({ apiKey: env.XAI_API_KEY }),
     tavily: Object.freeze({ apiKey: env.TAVILY_API_KEY }),
     youtube: Object.freeze({ apiKey: env.YOUTUBE_API_KEY }),
+    resend: Object.freeze({ apiKey: env.RESEND_API_KEY }),
   }),
 
   server: Object.freeze({

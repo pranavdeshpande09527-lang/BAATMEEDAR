@@ -9,11 +9,19 @@ services:
     region: oregon
     healthCheckPath: /health/live
     autoDeploy: true
+    buildFilter:
+      paths:
+        - server/**
+        - Dockerfile
+        - .dockerignore
+    preDeployCommand: node server/src/db/migrate.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 5000
+      - key: LOG_LEVEL
+        value: info
       - key: CORS_ORIGINS
         value: https://baatmeedar.com,http://localhost:5500
       - key: DATABASE_URL
@@ -35,6 +43,8 @@ services:
       - key: XAI_API_KEY
         sync: false
       - key: RESEND_API_KEY
+        sync: false
+      - key: YOUTUBE_API_KEY
         sync: false
 
 databases:

@@ -2,44 +2,116 @@
  * Baatmeedar — Post-Deploy Verification Script
  *
  * Runs smoke checks against deployed or running backend:
- * 1. Health readiness check (/health/ready)
- * 2. Submission validation check (/verify)
- * 3. Status check (/verify/{run_id}/status)
+ * 1. Health liveness check (/health/live)
+ * 2. Health readiness check (/health/ready)
+ * 3. Metrics endpoint check (/health/metrics)
+ * 4. Submission validation check (/verify — invalid input → 400)
+ *
+ * Usage:
+ *   node scripts/post-deploy.js                          # localhost:5000
+ *   DEPLOY_BASE_URL=https://api.example.com node scripts/post-deploy.js
  */
 
-import { config } from '../src/config/index.js';
-import { getLogger } from '../src/logging/logger.js';
+const TIMEOUT_MS = 15_000;
+const BASE_URL = process.env.DEPLOY_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+
+/**
+ * Fetch with timeout using AbortController.
+ */
+async function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    return res;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+/**
+ * Run a single smoke check.
+ */
+async function check(name, fn) {
+  const start = Date.now();
+  try {
+    await fn();
+    const ms = Date.now() - start;
+    console.log(JSON.stringify({ check: name, status: 'pass', latencyMs: ms }));
+    return true;
+  } catch (err) {
+    const ms = Date.now() - start;
+    console.error(JSON.stringify({ check: name, status: 'fail', latencyMs: ms, error: err.message }));
+    return false;
+  }
+}
 
 async function runPostDeployChecks() {
-  const logger = getLogger();
-  const baseUrl = `http://localhost:${config.port}`;
-  logger.info({ baseUrl }, 'Running post-deploy smoke checks...');
+  console.log(JSON.stringify({ event: 'smoke_test_start', baseUrl: BASE_URL, timestamp: new Date().toISOString() }));
 
-  // 1. Health check
-  const healthRes = await fetch(`${baseUrl}/health/ready`);
-  if (!healthRes.ok) {
-    throw new Error(`Readiness check failed with status ${healthRes.status}`);
-  }
-  const healthJson = await healthRes.json();
-  logger.info({ health: healthJson }, 'Readiness check passed');
+  const results = [];
 
-  // 2. Submission validation check (invalid input)
-  const invalidRes = await fetch(`${baseUrl}/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ input_type: 'invalid_type', content: '' }),
-  });
-  if (invalidRes.status !== 400) {
-    throw new Error(`Expected status 400 for invalid input, got ${invalidRes.status}`);
-  }
-  logger.info('Input validation smoke check passed');
+  // 1. Liveness check
+  results.push(
+    await check('health_live', async () => {
+      const res = await fetchWithTimeout(`${BASE_URL}/health/live`);
+      if (!res.ok) throw new Error(`Liveness check returned HTTP ${res.status}`);
+      const body = await res.json();
+      if (body.status !== 'ok') throw new Error(`Liveness status: ${body.status}`);
+    })
+  );
 
-  logger.info('All post-deploy smoke checks completed successfully!');
+  // 2. Readiness check
+  results.push(
+    await check('health_ready', async () => {
+      const res = await fetchWithTimeout(`${BASE_URL}/health/ready`);
+      if (!res.ok) throw new Error(`Readiness check returned HTTP ${res.status}`);
+    })
+  );
+
+  // 3. Metrics endpoint
+  results.push(
+    await check('health_metrics', async () => {
+      const res = await fetchWithTimeout(`${BASE_URL}/health/metrics`);
+      if (!res.ok) throw new Error(`Metrics endpoint returned HTTP ${res.status}`);
+    })
+  );
+
+  // 4. Input validation (invalid input should return 400)
+  results.push(
+    await check('verify_validation', async () => {
+      const res = await fetchWithTimeout(`${BASE_URL}/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input_type: 'invalid_type', content: '' }),
+      });
+      if (res.status !== 400) {
+        throw new Error(`Expected 400 for invalid input, got ${res.status}`);
+      }
+    })
+  );
+
+  // Summary
+  const passed = results.filter(Boolean).length;
+  const total = results.length;
+  const allPassed = passed === total;
+
+  console.log(
+    JSON.stringify({
+      event: 'smoke_test_complete',
+      passed,
+      total,
+      result: allPassed ? 'SUCCESS' : 'FAILURE',
+      timestamp: new Date().toISOString(),
+    })
+  );
+
+  return allPassed;
 }
 
 runPostDeployChecks()
-  .then(() => process.exit(0))
+  .then((ok) => process.exit(ok ? 0 : 1))
   .catch((err) => {
-    console.error('Post-deploy smoke check failed:', err.message);
+    console.error(JSON.stringify({ event: 'smoke_test_error', error: err.message }));
     process.exit(1);
   });

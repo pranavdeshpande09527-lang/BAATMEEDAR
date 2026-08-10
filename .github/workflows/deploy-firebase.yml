@@ -1,0 +1,57 @@
+name: Deploy Frontend to Firebase Hosting
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'firebase.json'
+      - '.firebaserc'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'firebase.json'
+      - '.firebaserc'
+
+concurrency:
+  group: firebase-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    name: Deploy Preview Channel
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Firebase Hosting Preview
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: baatmeedar-prod
+          expires: 7d
+
+  deploy-production:
+    name: Deploy Production
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Firebase Hosting Production
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: baatmeedar-prod
+          channelId: live

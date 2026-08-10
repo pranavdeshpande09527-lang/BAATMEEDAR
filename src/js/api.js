@@ -26,9 +26,19 @@ const USE_MOCK = false;
    REAL API CALLS (active when USE_MOCK = false)
    ───────────────────────────────────────────────────────────── */
 
+/**
+ * Trigger an early ping to wake Render cold instance in the background
+ */
+export async function warmUpBackend() {
+  if (USE_MOCK) return;
+  try {
+    fetch(`${BASE_URL}/health/live`, { method: 'GET', mode: 'cors' }).catch(() => {});
+  } catch {}
+}
+
 async function _apiPost(path, body) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90_000); // 90s for Render cold start
+  const timeout = setTimeout(() => controller.abort(), 120_000); // 120s for Render cold start
   try {
     const res = await fetch(`${BASE_URL}${path}`, {
       method: 'POST',
@@ -39,24 +49,43 @@ async function _apiPost(path, body) {
     });
     clearTimeout(timeout);
     if (!res.ok) {
-      const text = await res.text().catch(() => 'Unknown error');
-      throw new Error(`Server error ${res.status}: ${text.slice(0, 200)}`);
+      let errorMsg = `Server error ${res.status}`;
+      try {
+        const data = await res.json();
+        if (data.error) errorMsg = data.error;
+      } catch {
+        const text = await res.text().catch(() => '');
+        if (text) errorMsg = `${errorMsg}: ${text.slice(0, 150)}`;
+      }
+      throw new Error(errorMsg);
     }
     return res.json();
   } catch (err) {
     clearTimeout(timeout);
-    if (err.name === 'AbortError') throw new Error('Request timed out. The server may be waking up — please try again.');
+    if (err.name === 'AbortError') {
+      throw new Error('Request timed out. The server was waking up from sleep — please click VERIFY CLAIM again.');
+    }
+    if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+      throw new Error('Network error or server waking up. Please try again in a few seconds.');
+    }
     throw err;
   }
 }
 
 async function _apiGet(path) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
+  const timeout = setTimeout(() => controller.abort(), 45_000);
   try {
     const res = await fetch(`${BASE_URL}${path}`, { credentials: 'include', signal: controller.signal });
     clearTimeout(timeout);
-    if (!res.ok) throw new Error(`Server error ${res.status}`);
+    if (!res.ok) {
+      let errorMsg = `Server error ${res.status}`;
+      try {
+        const data = await res.json();
+        if (data.error) errorMsg = data.error;
+      } catch {}
+      throw new Error(errorMsg);
+    }
     return res.json();
   } catch (err) {
     clearTimeout(timeout);

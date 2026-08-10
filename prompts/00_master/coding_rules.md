@@ -12,6 +12,7 @@ These rules govern all implementation work for **Baatmeedar — The Gatekeeper o
 6. `inconclusive` is a correct verdict whenever the evidence is missing, weak, indirect, stale, contradictory, or too broad for the wording of the claim.
 7. Keep the independent Grok and Gemini verification results isolated. Neither evaluator may see or incorporate the other evaluator’s conclusion.
 8. A search-result snippet is a lead, not evidence. Evidence requires an inspectable source and a relevant excerpt.
+9. no hardcoded environment, security, operational, or policy values; use validated centralized configuration instead.
 
 ## 2. Evidence and data contract
 
@@ -66,14 +67,8 @@ Public verdict language must match the record:
 - Keep **Groq** (Stage 3 analysis) distinct from **Grok/xAI** (Stage 4 verification). They are different services and must not be substituted.
 - Do not expose system prompts, credentials, unrestricted database access, or private user data to models or external tools beyond what the task strictly requires.
 
-## 6. UI and accessibility
 
-- Use semantic, accessible, responsive UI with keyboard navigation, readable contrast, focus states, loading states, empty states, and clear recovery instructions.
-- Make original claims, source links, excerpts, dates, source quality, supporting/conflicting evidence, independent verifier outputs, and limitations easy to inspect.
-- Clearly distinguish raw source content, retrieved evidence, model analysis, and editorial synthesis.
-- Do not use visual polish to imply reliability that the evidence record does not support.
-
-## 7. Testing and completion
+## 6. Testing and completion
 
 Use deterministic mocked providers for automated tests. Cover contracts, input and URL validation, claim extraction, evidence attribution, verdict synthesis, authorization, error redaction, and failure recovery. Test direct statements, article URLs, and YouTube URLs, including empty, malformed, unavailable, malicious, slow, ambiguous, contradictory, outdated, rate-limited, and partial-failure cases.
 

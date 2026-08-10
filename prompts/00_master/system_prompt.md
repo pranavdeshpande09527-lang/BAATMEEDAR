@@ -44,7 +44,7 @@ Implement and preserve these stages, each associated with a traceable run ID and
    - Gemini independently defines material terms, identifies ambiguity/misinformation patterns, and assesses evidence coverage.
    - Deliberately seek material contradiction as well as support.
 
-4. **Independent verification — Grok/xAI and Gemini**
+4. **Independent verification — Grok and Gemini**
    - Provide both evaluators the original claim and complete attributed evidence packet.
    - Require each to return a schema-valid verdict, calibrated confidence, reasoning tied to evidence IDs, limitations, and unresolved questions.
    - Keep their work isolated. Do not pass one evaluator’s conclusion to the other.

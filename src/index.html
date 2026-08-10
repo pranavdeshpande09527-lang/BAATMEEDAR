@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BAATMEEDAR — The Gatekeeper of Truth. AI-powered fact-checking newsroom that verifies claims from statements, articles, and YouTube videos with transparent, evidence-backed verdicts." />
+  <title>BAATMEEDAR — The Gatekeeper of Truth</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Passion+One&family=Libre+Franklin:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/utilities.css" />
+  <link rel="stylesheet" href="css/masthead.css" />
+  <link rel="stylesheet" href="css/input.css" />
+  <link rel="stylesheet" href="css/stages.css" />
+  <link rel="stylesheet" href="css/verdict.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════
+       DATELINE BAR
+       ══════════════════════════════════════════════════════════ -->
+  <div class="dateline">
+    <div class="container">
+      <div class="dateline-inner">
+        <span class="dl-left">AI-Powered Fact-Checking Newsroom</span>
+        <span id="dateline-date" class="dl-right">LOADING DATE...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MASTHEAD
+       ══════════════════════════════════════════════════════════ -->
+  <header class="masthead" role="banner">
+    <div class="container">
+      <h1 class="masthead-title">BAATMEEDAR</h1>
+      <p class="masthead-tagline">The Gatekeeper of Truth</p>
+    </div>
+  </header>
+
+  <!-- Sub-header -->
+  <div class="subheader" role="navigation" aria-label="Site categories">
+    <div class="container">
+      <div class="subheader-inner">
+        <span>Fact Verification</span>
+        <span>Evidence Research</span>
+        <span>Independent AI Analysis</span>
+        <span>Claim Transparency</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MAIN CONTENT
+       ══════════════════════════════════════════════════════════ -->
+  <main class="container" id="main-content">
+
+    <!-- ── Input Section ──────────────────────────────────── -->
+    <section class="input-section" id="input-section" aria-labelledby="input-heading">
+
+      <h2 class="input-section-heading" id="input-heading">Submit a Claim for Verification</h2>
+
+      <form id="verify-form" novalidate>
+
+        <!-- Tab Switcher -->
+        <div class="input-tabs" role="tablist" aria-label="Input type">
+          <button type="button" class="input-tab active" role="tab"
+                  aria-selected="true" aria-controls="field-text"
+                  data-type="text" id="tab-text">
+            Direct Statement
+          </button>
+          <button type="button" class="input-tab" role="tab"
+                  aria-selected="false" aria-controls="field-url"
+                  data-type="article" id="tab-article">
+            Article Link
+          </button>
+          <button type="button" class="input-tab" role="tab"
+                  aria-selected="false" aria-controls="field-url"
+                  data-type="youtube" id="tab-youtube">
+            YouTube Link
+          </button>
+        </div>
+
+        <!-- Text field -->
+        <div id="field-text" class="input-field-wrap" role="tabpanel" aria-labelledby="tab-text">
+          <label for="input-textarea" class="sr-only">Enter your statement</label>
+          <textarea
+            id="input-textarea"
+            class="input-textarea"
+            placeholder="Paste or type a factual claim, statement, or excerpt to verify..."
+            maxlength="5000"
+            aria-describedby="char-count input-error input-hint"
+          ></textarea>
+          <div id="char-count" class="char-count" aria-live="polite">0 / 5000</div>
+        </div>
+
+        <!-- URL field (article + youtube) -->
+        <div id="field-url" class="input-field-wrap hidden" role="tabpanel" aria-labelledby="tab-article tab-youtube">
+          <label for="input-url" class="sr-only">Enter URL</label>
+          <input
+            type="url"
+            id="input-url"
+            class="input-url"
+            placeholder="https://"
+            aria-describedby="input-error input-hint"
+          />
+        </div>
+
+        <!-- Hint -->
+        <p id="input-hint" class="input-hint">
+          Paste or type a factual statement. Maximum 5,000 characters.
+        </p>
+
+        <!-- Inline error -->
+        <p id="input-error" class="input-error" role="alert" aria-live="assertive"></p>
+
+        <!-- Footer row -->
+        <div class="input-footer">
+          <p class="input-footer-note">
+            Baatmeedar extracts factual claims, researches them against authoritative
+            sources, and provides independent AI verdicts with full evidence trails.
+            Results are for informational purposes only.
+          </p>
+          <button type="submit" id="btn-submit" class="btn-primary">
+            VERIFY CLAIM &rarr;
+          </button>
+        </div>
+
+      </form>
+    </section>
+
+    <!-- ── Global Error ────────────────────────────────────── -->
+    <div id="global-error" class="hidden" style="padding: var(--sp-5) 0;" aria-live="assertive"></div>
+
+    <!-- ── Results Area ────────────────────────────────────── -->
+    <div id="results-area" class="hidden">
+
+      <!-- Progress Tracker -->
+      <section class="progress-section" id="progress-section" aria-label="Verification progress">
+        <div class="progress-label">Verification Progress</div>
+        <div class="progress-track" role="list">
+
+          <div class="progress-step" id="step-input" role="listitem">
+            <span class="step-mark">[ ]</span>
+            <span>Input Received</span>
+          </div>
+          <span class="progress-connector" aria-hidden="true">&rarr;</span>
+
+          <div class="progress-step" id="step-extract" role="listitem">
+            <span class="step-mark">[ ]</span>
+            <span>Claims Extracted</span>
+          </div>
+          <span class="progress-connector" aria-hidden="true">&rarr;</span>
+
+          <div class="progress-step" id="step-research" role="listitem">
+            <span class="step-mark">[ ]</span>
+            <span>Researching</span>
+          </div>
+          <span class="progress-connector" aria-hidden="true">&rarr;</span>
+
+          <div class="progress-step" id="step-verify" role="listitem">
+            <span class="step-mark">[ ]</span>
+            <span>Verifying</span>
+          </div>
+          <span class="progress-connector" aria-hidden="true">&rarr;</span>
+
+          <div class="progress-step" id="step-done" role="listitem">
+            <span class="step-mark">[ ]</span>
+            <span>Complete</span>
+          </div>
+        </div>
+
+        <!-- Wakeup notice -->
+        <div id="wakeup-notice" class="wakeup-notice hidden" role="status">
+          Contacting verification servers — the service may be waking up from sleep.
+          This can take up to 60 seconds on first load. Please wait&hellip;
+        </div>
+      </section>
+
+      <!-- ── Stage 1 ─────────────────────────────────────── -->
+      <div id="stage1-wrap" class="hidden"></div>
+
+      <!-- ── Stage 2 ─────────────────────────────────────── -->
+      <div id="stage2-wrap" class="hidden"></div>
+
+      <!-- ── Stage 3 ─────────────────────────────────────── -->
+      <div id="stage3-wrap" class="hidden"></div>
+
+      <!-- ── Final Verdict ──────────────────────────────── -->
+      <div id="verdict-wrap" class="hidden"></div>
+
+    </div><!-- /results-area -->
+
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════════
+       FOOTER
+       ══════════════════════════════════════════════════════════ -->
+  <footer style="border-top: 3px double var(--rule); padding: var(--sp-6) 0; margin-top: var(--sp-8);">
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--sp-4);">
+        <div>
+          <span style="font-family: var(--font-head); font-size: 20px; letter-spacing: 0.04em;">BAATMEEDAR</span>
+          <span style="font-size: 11px; color: var(--ink-muted); margin-left: var(--sp-3); letter-spacing: 0.08em;">THE GATEKEEPER OF TRUTH</span>
+        </div>
+        <div style="font-size: 11px; color: var(--ink-faint); text-align: right; letter-spacing: 0.04em; line-height: 1.7;">
+          AI Newsroom &middot; Promptathon 2026<br />
+          Verdicts are AI-generated and informational only. Not a substitute for professional advice.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JS — ES modules -->
+  <script type="module" src="js/app.js"></script>
+
+</body>
+</html>

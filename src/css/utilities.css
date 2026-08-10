@@ -1,0 +1,231 @@
+/* =============================================================
+   BAATMEEDAR — Utilities
+   Rules, section labels, column helpers, status text
+   ============================================================= */
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.container {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 var(--sp-6);
+}
+
+/* ── Horizontal Rules ────────────────────────────────────────── */
+.rule-thick {
+  border: none;
+  border-top: 3px solid var(--rule);
+  margin: 0;
+}
+
+.rule-double {
+  border: none;
+  border-top: 5px double var(--rule);
+  margin: 0;
+}
+
+.rule-thin {
+  border: none;
+  border-top: 1px solid var(--rule-light);
+  margin: 0;
+}
+
+.rule-mid {
+  border: none;
+  border-top: 1px solid var(--rule-mid);
+  margin: 0;
+}
+
+/* ── Section Labels ──────────────────────────────────────────── */
+.section-label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  line-height: 1;
+}
+
+.section-label-lg {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1;
+}
+
+/* ── Stage Header ────────────────────────────────────────────── */
+.stage-header {
+  padding: var(--sp-4) 0 var(--sp-3);
+  border-bottom: 2px solid var(--rule);
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-4);
+}
+
+.stage-header .stage-number {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.stage-header .stage-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.stage-header .stage-meta {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.05em;
+}
+
+/* ── Meta row ────────────────────────────────────────────────── */
+.meta-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 0 var(--sp-4);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--rule-light);
+  font-size: 13px;
+}
+
+.meta-row .meta-key {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding-top: 2px;
+}
+
+.meta-row .meta-val {
+  color: var(--ink);
+  word-break: break-all;
+}
+
+/* ── Verdict Badges (text only, bordered) ────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 2px var(--sp-2);
+  border: 1.5px solid currentColor;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.badge-supported    { color: var(--green); }
+.badge-contradicted { color: var(--red); }
+.badge-inconclusive { color: var(--amber); }
+.badge-pending      { color: var(--ink-faint); border-color: var(--rule-light); }
+
+/* ── Status Indicators (text-based, no icons) ────────────────── */
+.status-tick   { font-weight: 700; color: var(--green); }
+.status-active { font-weight: 700; color: var(--ink); }
+.status-wait   { color: var(--ink-faint); }
+.status-err    { font-weight: 700; color: var(--red); }
+
+/* ── Blinking cursor — active stage indicator ────────────────── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* ── Column Layout ───────────────────────────────────────────── */
+.cols-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 var(--col-gap);
+}
+
+.cols-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 var(--col-gap);
+}
+
+.col-divider {
+  border-left: 1px solid var(--rule-light);
+  padding-left: var(--col-gap);
+}
+
+/* ── Hidden / Visible ────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ── Inset block ─────────────────────────────────────────────── */
+.inset {
+  background: var(--bg-inset);
+  border: 1px solid var(--rule-light);
+  padding: var(--sp-4);
+  font-size: 13px;
+}
+
+/* ── Source citation ─────────────────────────────────────────── */
+.source-entry {
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--rule-light);
+}
+
+.source-entry:last-child {
+  border-bottom: none;
+}
+
+.source-entry .src-index {
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-right: var(--sp-2);
+}
+
+.source-entry .src-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.source-entry .src-meta {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+.source-entry .src-excerpt {
+  font-size: 12px;
+  color: var(--ink-mid);
+  margin-top: var(--sp-2);
+  padding-left: var(--sp-4);
+  border-left: 2px solid var(--rule-mid);
+  font-style: italic;
+}
+
+.src-stance-supporting  { color: var(--green); font-weight: 700; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+.src-stance-conflicting { color: var(--red);   font-weight: 700; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+.src-stance-neutral     { color: var(--ink-muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* ── Error message ───────────────────────────────────────────── */
+.error-box {
+  border: 2px solid var(--red);
+  padding: var(--sp-4);
+  background: var(--red-light);
+  font-size: 13px;
+  color: var(--red);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .cols-2, .cols-3 { grid-template-columns: 1fr; }
+  .col-divider { border-left: none; padding-left: 0; border-top: 1px solid var(--rule-light); padding-top: var(--col-gap); }
+  .meta-row { grid-template-columns: 120px 1fr; }
+}

@@ -1,0 +1,46 @@
+/* =============================================================
+   BAATMEEDAR — Design Tokens
+   Newspaper editorial palette. No gradients. No softness.
+   ============================================================= */
+
+:root {
+  /* Paper & Ink */
+  --bg:           #f4efe5;
+  --bg-inset:     #ece6d9;
+  --ink:          #141414;
+  --ink-mid:      #3a3a3a;
+  --ink-muted:    #5a5a5a;
+  --ink-faint:    #999;
+
+  /* Rules & Borders */
+  --rule:         #141414;
+  --rule-mid:     #555;
+  --rule-light:   #c8c0b0;
+
+  /* Accent — restrained red only for verdicts/warnings */
+  --red:          #b91c1c;
+  --red-light:    #fee2e2;
+  --green:        #166534;
+  --green-light:  #dcfce7;
+  --amber:        #78350f;
+  --amber-light:  #fef3c7;
+
+  /* Typography */
+  --font-head:    'Passion One', 'Impact', sans-serif;
+  --font-body:    'Libre Franklin', 'Georgia', serif;
+
+  /* Spacing — 4px base grid */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* Max layout width */
+  --max-w: 960px;
+  --col-gap: 24px;
+}

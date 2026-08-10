@@ -32,14 +32,14 @@ const envSchema = z.object({
   // AI Providers
   GEMINI_API_KEY: z.string().min(1).default(isTestEnv ? 'test-gemini-key' : undefined),
   GROQ_API_KEY: z.string().min(1).default(isTestEnv ? 'test-groq-key' : undefined),
-  XAI_API_KEY: z.string().min(1).default(isTestEnv ? 'test-xai-key' : undefined),
+  XAI_API_KEY: z.string().default(isTestEnv ? 'test-xai-key' : ''),
 
   // Research & Retrieval
   TAVILY_API_KEY: z.string().min(1).default(isTestEnv ? 'test-tavily-key' : undefined),
   YOUTUBE_API_KEY: z.string().default(''),
 
   // Email
-  RESEND_API_KEY: z.string().min(1).default(isTestEnv ? 'test-resend-key' : undefined),
+  RESEND_API_KEY: z.string().default(isTestEnv ? 'test-resend-key' : ''),
 
   // CORS
   CORS_ORIGINS: z.string().default('http://localhost:5500'),

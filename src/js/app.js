@@ -5,7 +5,7 @@
  * the API layer with the render functions.
  */
 
-import { submitVerification, getStatus, getResults } from './api.js';
+import { submitVerification, getStatus, getResults, warmUpBackend } from './api.js';
 import { renderStage1, renderStage2, renderStage3, renderVerdict } from './renderers.js';
 
 /* ─────────────────────────────────────────────────────────────
@@ -409,6 +409,7 @@ window.BAATMEEDAR = { reset };
 document.addEventListener('DOMContentLoaded', () => {
   resolveDom();
   initTabs();
+  warmUpBackend();
 
   // Set current date in dateline
   const dl = document.getElementById('dateline-date');

@@ -28,6 +28,16 @@ describe('Layer 3: HTTP API Contract & Security Tests', () => {
     orchestrator,
   });
 
+  describe('GET / Root Endpoint', () => {
+    it('returns 200 with service metadata and online status', async () => {
+      const res = await request(app).get('/');
+      expect(res.status).toBe(200);
+      expect(res.body.name).toBe('Baatmeedar API');
+      expect(res.body.status).toBe('online');
+      expect(res.body.endpoints).toBeDefined();
+    });
+  });
+
   describe('POST /verify Endpoint', () => {
     it('accepts valid text input and returns 201 with run_id UUID', async () => {
       const res = await request(app)

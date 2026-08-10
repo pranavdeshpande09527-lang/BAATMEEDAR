@@ -41,7 +41,12 @@ export function createApp(opts = {}) {
   const { config, db, runRepository, guestSessionRepository, orchestrator, adapters } = opts;
   const app = express();
 
-  const corsOrigins = config?.server?.corsOrigins || ['http://localhost:5500'];
+  const corsOrigins = config?.server?.corsOrigins || [
+    'http://localhost:5500',
+    'https://prompathon2026.web.app',
+    'https://prompathon2026.firebaseapp.com',
+    'https://baatmeedar.com',
+  ];
   const verifyLimitOpts = config?.server?.rateLimits?.verify || { max: 10, windowMs: 60000 };
   const authLimitOpts = config?.server?.rateLimits?.auth || { max: 5, windowMs: 60000 };
   const guestTtl = config?.guestSession?.ttlSeconds || 86400;
@@ -69,6 +74,22 @@ export function createApp(opts = {}) {
   const aRateLimiter = authRateLimiter(authLimitOpts);
 
   // 7. Routes
+  app.get('/', (_req, res) => {
+    res.json({
+      name: 'Baatmeedar API',
+      description: 'The Gatekeeper of Truth verification service',
+      version: '0.1.0',
+      status: 'online',
+      endpoints: {
+        health: '/health/live',
+        ready: '/health/ready',
+        verify: '/verify',
+        auth: '/auth',
+        account: '/account',
+      },
+    });
+  });
+
   app.use('/health', healthRoutes({ db, adapters }));
   app.use('/verify', verifyRoutes({ runRepository, orchestrator, verifyRateLimiter: vRateLimiter }));
   app.use('/auth', authRoutes({ guestSessionRepository, runRepository, authRateLimiter: aRateLimiter }));

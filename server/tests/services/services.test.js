@@ -41,7 +41,8 @@ describe('5-Stage Workflow Orchestration (with test fakes)', () => {
     expect(results.research[0].sources.length).toBeGreaterThan(0);
 
     expect(results.verdicts.length).toBeGreaterThan(0);
-    expect(results.verdicts[0].groq.verdict).toBe('supported');
+    // Stage 4 verifiers are now grok + gemini
+    expect(results.verdicts[0].grok.verdict).toBe('supported');
     expect(results.verdicts[0].gemini.verdict).toBe('supported');
     expect(results.verdicts[0].final.verdict).toBe('supported');
   });

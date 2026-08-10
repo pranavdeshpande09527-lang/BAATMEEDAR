@@ -1,0 +1,16 @@
+node_modules
+server/node_modules
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+.gemini
+docs
+prompts
+server/tests
+coverage
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

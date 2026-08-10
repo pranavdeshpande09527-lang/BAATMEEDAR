@@ -19,6 +19,7 @@ import { guestSessionMiddleware } from './middleware/guestSession.js';
 import { authenticateMiddleware } from './middleware/authenticate.js';
 import { errorHandlerMiddleware } from './middleware/errorHandler.js';
 import { verifyRateLimiter, authRateLimiter } from './middleware/rateLimit.js';
+import { telemetryMiddleware } from './middleware/telemetryMiddleware.js';
 
 import { healthRoutes } from './routes/health.js';
 import { verifyRoutes } from './routes/verify.js';
@@ -34,9 +35,10 @@ import { accountRoutes } from './routes/account.js';
  * @param {object} [opts.runRepository]
  * @param {object} [opts.guestSessionRepository]
  * @param {object} [opts.orchestrator]
+ * @param {object} [opts.adapters]
  */
 export function createApp(opts = {}) {
-  const { config, db, runRepository, guestSessionRepository, orchestrator } = opts;
+  const { config, db, runRepository, guestSessionRepository, orchestrator, adapters } = opts;
   const app = express();
 
   const corsOrigins = config?.server?.corsOrigins || ['http://localhost:5500'];
@@ -47,30 +49,34 @@ export function createApp(opts = {}) {
   // 1. Request ID
   app.use(requestIdMiddleware());
 
-  // 2. Secure headers & CORS
+  // 2. Telemetry metrics recording
+  app.use(telemetryMiddleware);
+
+  // 3. Secure headers & CORS
   app.use(secureHeadersMiddleware(corsOrigins));
 
-  // 3. Body limits
+  // 4. Body limits
   app.use(bodyLimitsMiddleware());
 
-  // 4. Guest session
+  // 5. Guest session
   app.use(guestSessionMiddleware(guestTtl));
 
-  // 5. Authentication (non-blocking JWT extraction)
+  // 6. Authentication (non-blocking JWT extraction)
   app.use(authenticateMiddleware());
 
   // Rate limiters
   const vRateLimiter = verifyRateLimiter(verifyLimitOpts);
   const aRateLimiter = authRateLimiter(authLimitOpts);
 
-  // 6. Routes
-  app.use('/health', healthRoutes({ db }));
+  // 7. Routes
+  app.use('/health', healthRoutes({ db, adapters }));
   app.use('/verify', verifyRoutes({ runRepository, orchestrator, verifyRateLimiter: vRateLimiter }));
   app.use('/auth', authRoutes({ guestSessionRepository, runRepository, authRateLimiter: aRateLimiter }));
   app.use('/account', accountRoutes({ runRepository }));
 
-  // 7. Error handler
+  // 8. Error handler
   app.use(errorHandlerMiddleware());
 
   return app;
 }
+

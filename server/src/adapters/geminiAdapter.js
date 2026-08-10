@@ -7,10 +7,24 @@
  * 3. Stage 4 independent verification
  *
  * Enforces structured outputs and validates responses against Zod schemas.
+ * Implements telemetry logging and standardized prompt trust boundaries.
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { validateModelOutput, ClaimExtractionOutputSchema, ResearchPlanOutputSchema, AnalysisOutputSchema, VerifierOutputSchema } from '../schemas/modelOutput.js';
+import {
+  validateModelOutput,
+  ClaimExtractionOutputSchema,
+  ResearchPlanOutputSchema,
+  AnalysisOutputSchema,
+  VerifierOutputSchema,
+} from '../schemas/modelOutput.js';
+import {
+  buildClaimExtractionPrompt,
+  buildHermesPlanPrompt,
+  buildGeminiAnalysisPrompt,
+  buildVerifierPrompt,
+  PROMPT_VERSIONS,
+} from '../schemas/promptTemplates.js';
 import { getLogger } from '../logging/logger.js';
 
 export class GeminiAdapter {
@@ -24,46 +38,36 @@ export class GeminiAdapter {
    * Stage 2: Extract atomic factual claims from raw input text.
    */
   async extractClaims(inputText) {
+    const startTime = Date.now();
     const model = this.genAI.getGenerativeAIModel({
       model: this.modelName,
       generationConfig: { responseMimeType: 'application/json' },
     });
 
-    const prompt = `You are an expert newsroom editor extracting factual claims from submitted text.
-
-Task:
-1. Remove all opinions, predictions, advice, and non-verifiable rhetoric.
-2. Split factual content into atomic, independently verifiable claims.
-3. Assign each claim a domain (e.g. Health, Law, Science, Politics, Finance, Technology, History, General).
-4. Assign time_sensitivity: 'current', 'historical', or 'unspecified'.
-
-Return JSON matching:
-{
-  "claims": [
-    {
-      "id": "clm-001",
-      "text": "The claim as written",
-      "domain": "Health",
-      "context": "Context from input",
-      "entities": ["Entity1"],
-      "temporal": "Historical"
-    }
-  ],
-  "removed_opinions": ["Opinion text removed"]
-}
-
-Input text:
-"""
-${inputText}
-"""`;
+    const prompt = buildClaimExtractionPrompt(inputText);
 
     try {
       const response = await model.generateContent(prompt);
       const text = response.response.text();
       const rawJson = JSON.parse(text);
-      return validateModelOutput(ClaimExtractionOutputSchema, rawJson, 'Gemini claim extraction');
+      const validated = validateModelOutput(ClaimExtractionOutputSchema, rawJson, 'Gemini claim extraction');
+
+      getLogger().info({
+        provider: 'gemini',
+        stage: 'stage_2_extraction',
+        promptVersion: PROMPT_VERSIONS.STAGE_2_EXTRACTION,
+        latencyMs: Date.now() - startTime,
+        claimsExtracted: validated.claims.length,
+      }, 'Gemini claim extraction completed');
+
+      return validated;
     } catch (err) {
-      getLogger().error({ err: err.message }, 'Gemini claim extraction failed');
+      getLogger().error({
+        provider: 'gemini',
+        stage: 'stage_2_extraction',
+        latencyMs: Date.now() - startTime,
+        err: err.message,
+      }, 'Gemini claim extraction failed');
       throw err;
     }
   }
@@ -72,36 +76,36 @@ ${inputText}
    * Stage 3: Hermes Research Plan creation using Gemini
    */
   async planResearch(claim) {
+    const startTime = Date.now();
     const model = this.genAI.getGenerativeAIModel({
       model: this.modelName,
       generationConfig: { responseMimeType: 'application/json' },
     });
 
-    const prompt = `You are Hermes, the research-planning agent in a newsroom.
-
-Claim ID: ${claim.id}
-Claim Text: "${claim.text}"
-Domain: ${claim.domain}
-Context: ${claim.context || ''}
-
-Create a precise research plan to gather primary evidence.
-Return JSON matching:
-{
-  "research_question": "Precise question to test claim",
-  "required_facts": ["Fact 1", "Fact 2"],
-  "source_strategy": "Authoritative source types needed",
-  "tavily_queries": ["query 1", "query 2"],
-  "support_criteria": "What proves this claim",
-  "contradiction_criteria": "What disproves this claim",
-  "follow_up_gaps": []
-}`;
+    const prompt = buildHermesPlanPrompt(claim);
 
     try {
       const response = await model.generateContent(prompt);
       const rawJson = JSON.parse(response.response.text());
-      return validateModelOutput(ResearchPlanOutputSchema, rawJson, 'Hermes research plan');
+      const validated = validateModelOutput(ResearchPlanOutputSchema, rawJson, 'Hermes research plan');
+
+      getLogger().info({
+        provider: 'gemini_hermes',
+        stage: 'stage_3_planning',
+        promptVersion: PROMPT_VERSIONS.STAGE_3_HERMES_PLAN,
+        claimId: claim.id,
+        latencyMs: Date.now() - startTime,
+      }, 'Hermes research plan created');
+
+      return validated;
     } catch (err) {
-      getLogger().error({ err: err.message }, 'Gemini Hermes research planning failed');
+      getLogger().error({
+        provider: 'gemini_hermes',
+        stage: 'stage_3_planning',
+        claimId: claim.id,
+        latencyMs: Date.now() - startTime,
+        err: err.message,
+      }, 'Gemini Hermes research planning failed');
       throw err;
     }
   }
@@ -110,31 +114,36 @@ Return JSON matching:
    * Stage 3: Gemini supporting analysis
    */
   async analyzeEvidence(claim, sources) {
+    const startTime = Date.now();
     const model = this.genAI.getGenerativeAIModel({
       model: this.modelName,
       generationConfig: { responseMimeType: 'application/json' },
     });
 
-    const prompt = `You are Gemini Stage 3 analyzer. Define material terms, flag ambiguity, and judge whether gathered sources address the claim.
-
-Claim: "${claim.text}"
-Sources: ${JSON.stringify(sources)}
-
-Return JSON matching:
-{
-  "analysis": "Detailed analysis summary",
-  "missing_context": [],
-  "logical_issues": [],
-  "counterevidence": [],
-  "unanswered_questions": []
-}`;
+    const prompt = buildGeminiAnalysisPrompt(claim, sources);
 
     try {
       const response = await model.generateContent(prompt);
       const rawJson = JSON.parse(response.response.text());
-      return validateModelOutput(AnalysisOutputSchema, rawJson, 'Gemini Stage 3 analysis');
+      const validated = validateModelOutput(AnalysisOutputSchema, rawJson, 'Gemini Stage 3 analysis');
+
+      getLogger().info({
+        provider: 'gemini',
+        stage: 'stage_3_analysis',
+        promptVersion: PROMPT_VERSIONS.STAGE_3_GEMINI_ANALYSIS,
+        claimId: claim.id,
+        latencyMs: Date.now() - startTime,
+      }, 'Gemini Stage 3 analysis completed');
+
+      return validated;
     } catch (err) {
-      getLogger().error({ err: err.message }, 'Gemini Stage 3 analysis failed');
+      getLogger().error({
+        provider: 'gemini',
+        stage: 'stage_3_analysis',
+        claimId: claim.id,
+        latencyMs: Date.now() - startTime,
+        err: err.message,
+      }, 'Gemini Stage 3 analysis failed');
       throw err;
     }
   }
@@ -143,40 +152,37 @@ Return JSON matching:
    * Stage 4: Gemini independent verification
    */
   async verify(claim, evidencePacket) {
+    const startTime = Date.now();
     const model = this.genAI.getGenerativeAIModel({
       model: this.modelName,
       generationConfig: { responseMimeType: 'application/json' },
     });
 
-    const prompt = `You are Gemini, an independent Stage 4 verifier.
-Compare the claim against the complete attributed evidence packet.
-
-Claim: "${claim.text}"
-Evidence Packet:
-${JSON.stringify(evidencePacket, null, 2)}
-
-Rules:
-1. Return verdict: 'supported', 'contradicted', or 'inconclusive'.
-2. Calibrate confidence (0-100).
-3. Cite evidence_ids directly from the supplied sources.
-4. State explicit limitations.
-
-Return JSON matching:
-{
-  "verdict": "supported",
-  "confidence": 95,
-  "reasoning": "Reasoning tied to evidence IDs",
-  "evidence_ids": ["src-001"],
-  "limitations": "Limitations of verdict",
-  "unresolved_questions": []
-}`;
+    const prompt = buildVerifierPrompt('Gemini', claim, evidencePacket);
 
     try {
       const response = await model.generateContent(prompt);
       const rawJson = JSON.parse(response.response.text());
-      return validateModelOutput(VerifierOutputSchema, rawJson, 'Gemini Stage 4 verification');
+      const validated = validateModelOutput(VerifierOutputSchema, rawJson, 'Gemini Stage 4 verification');
+
+      getLogger().info({
+        provider: 'gemini',
+        stage: 'stage_4_verification',
+        promptVersion: PROMPT_VERSIONS.STAGE_4_VERIFIER,
+        claimId: claim.id,
+        verdict: validated.verdict,
+        latencyMs: Date.now() - startTime,
+      }, 'Gemini Stage 4 verification completed');
+
+      return validated;
     } catch (err) {
-      getLogger().error({ err: err.message }, 'Gemini Stage 4 verification failed');
+      getLogger().error({
+        provider: 'gemini',
+        stage: 'stage_4_verification',
+        claimId: claim.id,
+        latencyMs: Date.now() - startTime,
+        err: err.message,
+      }, 'Gemini Stage 4 verification failed');
       throw err;
     }
   }

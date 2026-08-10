@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import { InputType } from './enums.js';
 import { DEFAULTS } from '../config/defaults.js';
+import { isSafeHttpsUrl } from '../utils/ssrf.js';
 
 /* ─────────────────────────────────────────────────────────────
    Control character regex — rejects null bytes, C0/C1 except
@@ -18,19 +19,6 @@ const CONTROL_CHAR_REGEX = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/;
 /* ─────────────────────────────────────────────────────────────
    URL validation helpers
    ───────────────────────────────────────────────────────────── */
-
-/**
- * Validates a URL string using the built-in URL parser.
- * Rejects non-HTTPS schemes.
- */
-function isValidHttpsUrl(str) {
-  try {
-    const url = new URL(str);
-    return url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Checks if a URL hostname is in the allowed YouTube hostnames list.
@@ -74,8 +62,8 @@ const UrlContent = z
   .refine((s) => s.trim().length > 0, {
     message: 'URL cannot be blank.',
   })
-  .refine((s) => isValidHttpsUrl(s.trim()), {
-    message: 'URL must use HTTPS protocol (e.g. https://example.com).',
+  .refine((s) => isSafeHttpsUrl(s.trim()), {
+    message: 'URL must be a valid, safe HTTPS URL (e.g. https://example.com).',
   });
 
 /* ─────────────────────────────────────────────────────────────

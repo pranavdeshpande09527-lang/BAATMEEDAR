@@ -76,7 +76,7 @@ class InMemoryRunStore {
       const plan = this.researchPlans.get(c.id);
       const sources = this.sources.get(c.id) || [];
       const vResults = this.verifierResults.get(c.id) || [];
-      const groqRes = vResults.find((v) => v.verifier === 'groq');
+      const grokRes = vResults.find((v) => v.verifier === 'grok' || v.verifier === 'groq');
       const geminiRes = vResults.find((v) => v.verifier === 'gemini');
       const finalRes = this.finalResults.get(c.id);
 
@@ -84,19 +84,22 @@ class InMemoryRunStore {
         claim_id: c.id,
         hermes_plan: plan || undefined,
         sources,
-        groq_analysis: groqRes?.reasoning || 'Analysis pending.',
+        groq_analysis: grokRes?.reasoning || 'Analysis pending.',
         gemini_analysis: geminiRes?.reasoning || 'Analysis pending.',
       });
 
+      const firstVerifierData = grokRes ? {
+        verdict: grokRes.verdict,
+        confidence: grokRes.confidence,
+        reasoning: grokRes.reasoning,
+        limitations: grokRes.limitations,
+        evidence_ids: grokRes.evidence_ids,
+      } : undefined;
+
       verdicts.push({
         claim_id: c.id,
-        groq: groqRes ? {
-          verdict: groqRes.verdict,
-          confidence: groqRes.confidence,
-          reasoning: groqRes.reasoning,
-          limitations: groqRes.limitations,
-          evidence_ids: groqRes.evidence_ids,
-        } : undefined,
+        grok: firstVerifierData,
+        groq: firstVerifierData,
         gemini: geminiRes ? {
           verdict: geminiRes.verdict,
           confidence: geminiRes.confidence,
@@ -306,7 +309,7 @@ export const runRepository = {
         const { rows: vResults } = await db.query('SELECT * FROM verifier_results WHERE claim_id = $1', [c.id]);
         const { rows: finalRows } = await db.query('SELECT * FROM final_results WHERE claim_id = $1', [c.id]);
 
-        const groqRes = vResults.find((v) => v.verifier === 'groq');
+        const grokRes = vResults.find((v) => v.verifier === 'grok' || v.verifier === 'groq');
         const geminiRes = vResults.find((v) => v.verifier === 'gemini');
         const finalRes = finalRows[0];
 
@@ -314,19 +317,22 @@ export const runRepository = {
           claim_id: c.id,
           hermes_plan: planRows[0] || undefined,
           sources,
-          groq_analysis: groqRes?.reasoning || 'Analysis pending.',
+          groq_analysis: grokRes?.reasoning || 'Analysis pending.',
           gemini_analysis: geminiRes?.reasoning || 'Analysis pending.',
         });
 
+        const firstVerifierData = grokRes ? {
+          verdict: grokRes.verdict,
+          confidence: grokRes.confidence,
+          reasoning: grokRes.reasoning,
+          limitations: grokRes.limitations,
+          evidence_ids: grokRes.evidence_ids,
+        } : undefined;
+
         verdicts.push({
           claim_id: c.id,
-          groq: groqRes ? {
-            verdict: groqRes.verdict,
-            confidence: groqRes.confidence,
-            reasoning: groqRes.reasoning,
-            limitations: groqRes.limitations,
-            evidence_ids: groqRes.evidence_ids,
-          } : undefined,
+          grok: firstVerifierData,
+          groq: firstVerifierData,
           gemini: geminiRes ? {
             verdict: geminiRes.verdict,
             confidence: geminiRes.confidence,

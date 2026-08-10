@@ -12,7 +12,7 @@ export class FakeGeminiAdapter {
           domain: 'Health',
           context: 'WHO emergency declaration regarding mpox outbreak.',
           entities: ['WHO', 'mpox'],
-          temporal: 'Historical',
+          temporal: 'historical',
         },
       ],
       removed_opinions: ['Immediate global action is required.'],
@@ -21,13 +21,18 @@ export class FakeGeminiAdapter {
 
   async planResearch(claim) {
     return {
+      claim_id: claim.id,
       research_question: `Did official authorities confirm: ${claim.text}?`,
-      required_facts: ['Official announcement date', 'Authoritative statement'],
+      required_facts: ['Official announcement date', 'Authoritative statement from WHO'],
       source_strategy: 'Official health agencies and wire reporting.',
-      tavily_queries: [`${claim.text} official statement`],
-      support_criteria: 'Direct confirmation by primary agency.',
-      contradiction_criteria: 'Direct denial by primary agency.',
+      preferred_source_types: ['official record', 'peer-reviewed journal'],
+      tavily_queries: [`${claim.text} official statement`, `WHO mpox emergency declaration 2024`],
+      support_criteria: 'Direct confirmation by primary agency with a dated official statement.',
+      contradiction_criteria: 'Direct denial or retraction by primary agency.',
+      groq_task: 'Identify missing context, logical gaps, counterevidence, and unanswered questions.',
+      gemini_task: 'Define material terms, flag ambiguity/misinformation patterns, and assess evidence coverage.',
       follow_up_gaps: [],
+      limitations: [],
     };
   }
 

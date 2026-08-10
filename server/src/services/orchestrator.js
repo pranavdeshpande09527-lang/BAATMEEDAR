@@ -5,7 +5,7 @@
  * 1. Input Collection & Ingestion
  * 2. Gemini Claim Extraction & Opinion Removal
  * 3. Domain Research (Hermes Plan + Tavily Search + Groq/Gemini Analysis)
- * 4. Independent Verification (Groq & Gemini in parallel)
+ * 4. Independent Verification (Grok/xAI & Gemini in parallel; Groq as fallback)
  * 5. Editorial Synthesis & Result Publishing
  *
  * Observable, retry-safe, cancellation-aware, and time-bounded.
@@ -82,7 +82,7 @@ export class Orchestrator {
         const verifierRes = await this.verifier.verifyClaim(claim, researchData);
         verificationList.push(verifierRes);
 
-        await this.repo.saveVerifierResult(claim.id, verifierRes.groq);
+        await this.repo.saveVerifierResult(claim.id, verifierRes.grok);
         await this.repo.saveVerifierResult(claim.id, verifierRes.gemini);
       }
       await auditLog({ event: 'stage_completed', run_id: runId, details: { stage: 'verifying' } });

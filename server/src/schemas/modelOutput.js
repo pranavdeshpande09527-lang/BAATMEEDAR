@@ -30,13 +30,36 @@ export const ClaimExtractionOutputSchema = z.object({
    Stage 3 — Hermes Research Plan Output
    ───────────────────────────────────────────────────────────── */
 export const ResearchPlanOutputSchema = z.object({
+  claim_id: z.string().optional(),
   research_question: z.string().min(1),
   required_facts: z.array(z.string()).min(1),
   source_strategy: z.string().min(1),
+  preferred_source_types: z.array(z.string()).default(['official record', 'peer-reviewed journal', 'credible reporting']),
   tavily_queries: z.array(z.string()).min(1),
-  support_criteria: z.string().optional(),
-  contradiction_criteria: z.string().optional(),
+  support_criteria: z.union([z.string(), z.array(z.string())]).default([]),
+  contradiction_criteria: z.union([z.string(), z.array(z.string())]).default([]),
+  groq_task: z.string().default('Identify missing context, logical gaps, counterevidence, and unanswered questions.'),
+  gemini_task: z.string().default('Define material terms, flag ambiguity/misinformation patterns, and assess evidence coverage.'),
   follow_up_gaps: z.array(z.string()).default([]),
+  limitations: z.union([z.string(), z.array(z.string())]).default([]),
+});
+
+/* ─────────────────────────────────────────────────────────────
+   Tool Calling Schemas — Function Calling Runtime
+   ───────────────────────────────────────────────────────────── */
+export const ToolCallRequestSchema = z.object({
+  tool_name: z.enum(['tavily_search', 'tavily_extract', 'youtube_transcript']),
+  arguments: z.record(z.unknown()),
+  run_id: z.string().min(1),
+  claim_id: z.string().optional(),
+});
+
+export const ToolCallResultSchema = z.object({
+  tool_name: z.string(),
+  status: z.enum(['success', 'error', 'blocked']),
+  data: z.unknown().optional(),
+  execution_ms: z.number().nonnegative(),
+  error_message: z.string().optional(),
 });
 
 /* ─────────────────────────────────────────────────────────────

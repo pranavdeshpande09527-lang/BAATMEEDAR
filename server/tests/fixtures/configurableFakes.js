@@ -40,13 +40,18 @@ export class ConfigurableFakeGeminiAdapter {
       throw new Error('Gemini research planning failed');
     }
     return {
+      claim_id: claim.id,
       research_question: `Did WHO confirm: ${claim.text}?`,
       required_facts: ['Official announcement'],
       source_strategy: 'Official health agencies',
+      preferred_source_types: ['official record'],
       tavily_queries: [`${claim.text} official statement`],
       support_criteria: 'Direct confirmation',
       contradiction_criteria: 'Direct denial',
+      groq_task: 'Identify missing context, logical gaps, counterevidence, and unanswered questions.',
+      gemini_task: 'Define material terms, flag ambiguity/misinformation patterns, and assess evidence coverage.',
       follow_up_gaps: [],
+      limitations: [],
     };
   }
 
@@ -103,6 +108,26 @@ export class ConfigurableFakeGroqAdapter {
       reasoning: this.opts.groqReasoning || 'Groq verification result based on evidence.',
       evidence_ids: this.opts.groqEvidenceIds || ['src-001'],
       limitations: 'Subject to search coverage.',
+      unresolved_questions: [],
+    };
+  }
+}
+
+export class ConfigurableFakeXAIAdapter {
+  constructor(opts = {}) {
+    this.opts = opts;
+  }
+
+  async verify(claim, evidencePacket) {
+    if (this.opts.failGrokVerify || this.opts.failGroqVerify) {
+      throw new Error('Grok/xAI verification provider error');
+    }
+    return {
+      verdict: this.opts.grokVerdict || this.opts.groqVerdict || 'supported',
+      confidence: this.opts.grokConfidence ?? this.opts.groqConfidence ?? 91,
+      reasoning: this.opts.grokReasoning || this.opts.groqReasoning || 'Grok independent verification result based on evidence.',
+      evidence_ids: this.opts.grokEvidenceIds || this.opts.groqEvidenceIds || ['src-001'],
+      limitations: 'Subject to search coverage and provider availability.',
       unresolved_questions: [],
     };
   }
@@ -171,6 +196,7 @@ export function createConfigurableAdapters(opts = {}) {
   return {
     gemini: new ConfigurableFakeGeminiAdapter(opts),
     groq: new ConfigurableFakeGroqAdapter(opts),
+    xai: new ConfigurableFakeXAIAdapter(opts),
     tavily: new ConfigurableFakeTavilyAdapter(opts),
     youtube: new ConfigurableFakeYoutubeAdapter(opts),
   };

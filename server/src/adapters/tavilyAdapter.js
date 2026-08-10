@@ -9,6 +9,7 @@
 
 import { getLogger } from '../logging/logger.js';
 import { blockedUrlError } from '../schemas/errors.js';
+import { isSafeHttpsUrl } from '../utils/ssrf.js';
 
 export class TavilyAdapter {
   constructor(apiKey) {
@@ -106,32 +107,7 @@ export class TavilyAdapter {
    * SSRF URL Validation
    */
   _isSafeUrl(str) {
-    try {
-      const parsed = new URL(str);
-
-      // Must be HTTPS
-      if (parsed.protocol !== 'https:') return false;
-
-      const hostname = parsed.hostname.toLowerCase();
-
-      // Block localhost, loopback, private ranges
-      if (
-        hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        hostname === '::1' ||
-        hostname.startsWith('10.') ||
-        hostname.startsWith('192.168.') ||
-        hostname.startsWith('169.254.') ||
-        hostname.endsWith('.local') ||
-        hostname.endsWith('.internal')
-      ) {
-        return false;
-      }
-
-      return true;
-    } catch {
-      return false;
-    }
+    return isSafeHttpsUrl(str);
   }
 
   _extractPublisher(urlStr) {

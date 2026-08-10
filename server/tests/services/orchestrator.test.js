@@ -118,7 +118,7 @@ describe('Layer 2: Orchestrator Integration & Boundary Tests', () => {
 
   it('handles verifier disagreement by producing an inconclusive final verdict', async () => {
     const fakes = createConfigurableAdapters({
-      groqVerdict: 'supported',
+      grokVerdict: 'supported',
       geminiVerdict: 'contradicted',
     });
     const orchestrator = new Orchestrator(fakes);
@@ -138,14 +138,14 @@ describe('Layer 2: Orchestrator Integration & Boundary Tests', () => {
     });
 
     const results = await runRepository.getResults(runId, owner);
-    expect(results.verdicts[0].groq.verdict).toBe('supported');
+    expect(results.verdicts[0].grok.verdict).toBe('supported');
     expect(results.verdicts[0].gemini.verdict).toBe('contradicted');
     expect(results.verdicts[0].final.verdict).toBe('inconclusive');
   });
 
-  it('enforces verifier isolation (Groq verify does NOT receive Gemini output)', async () => {
+  it('enforces verifier isolation (Grok/xAI verify does NOT receive Gemini output)', async () => {
     const fakes = createConfigurableAdapters();
-    const groqSpy = vi.spyOn(fakes.groq, 'verify');
+    const xaiSpy = vi.spyOn(fakes.xai, 'verify');
     const geminiSpy = vi.spyOn(fakes.gemini, 'verify');
 
     const orchestrator = new Orchestrator(fakes);
@@ -164,16 +164,16 @@ describe('Layer 2: Orchestrator Integration & Boundary Tests', () => {
       content: 'Claim to verify isolation.',
     });
 
-    expect(groqSpy).toHaveBeenCalled();
+    expect(xaiSpy).toHaveBeenCalled();
     expect(geminiSpy).toHaveBeenCalled();
 
-    const groqEvidencePacket = groqSpy.mock.calls[0][1];
-    expect(groqEvidencePacket.gemini).toBeUndefined();
-    expect(groqEvidencePacket.gemini_verdict).toBeUndefined();
+    const xaiEvidencePacket = xaiSpy.mock.calls[0][1];
+    expect(xaiEvidencePacket.gemini).toBeUndefined();
+    expect(xaiEvidencePacket.gemini_verdict).toBeUndefined();
 
     const geminiEvidencePacket = geminiSpy.mock.calls[0][1];
-    expect(geminiEvidencePacket.groq).toBeUndefined();
-    expect(geminiEvidencePacket.groq_verdict).toBeUndefined();
+    expect(geminiEvidencePacket.grok).toBeUndefined();
+    expect(geminiEvidencePacket.grok_verdict).toBeUndefined();
   });
 
   it('marks run as failed when provider adapter throws an unexpected error', async () => {

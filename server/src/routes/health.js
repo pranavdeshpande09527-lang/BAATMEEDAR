@@ -6,10 +6,12 @@
  */
 
 import { Router } from 'express';
+import { telemetry } from '../logging/telemetry.js';
 
 /**
  * @param {object} deps
  * @param {object} [deps.db] — database pool for readiness check
+ * @param {object} [deps.adapters] — external provider adapters
  */
 export function healthRoutes(deps = {}) {
   const router = Router();
@@ -19,7 +21,11 @@ export function healthRoutes(deps = {}) {
    * Always returns OK if the process is running.
    */
   router.get('/live', (_req, res) => {
-    res.json({ status: 'ok' });
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptimeSeconds: Math.floor(process.uptime()),
+    });
   });
 
   /**
@@ -43,9 +49,23 @@ export function healthRoutes(deps = {}) {
       checks.database = 'not_configured';
     }
 
+    // Provider check
+    checks.providers = {
+      gemini: deps.adapters?.gemini ? 'configured' : 'mock/unconfigured',
+      resend: deps.adapters?.resend ? 'configured' : 'mock/unconfigured',
+    };
+
     const statusCode = ready ? 200 : 503;
     res.status(statusCode).json({ status: ready ? 'ready' : 'not_ready', checks });
   });
 
+  /**
+   * GET /health/metrics — Privacy-safe operational telemetry metrics.
+   */
+  router.get('/metrics', (_req, res) => {
+    res.json(telemetry.getMetricsSummary());
+  });
+
   return router;
 }
+

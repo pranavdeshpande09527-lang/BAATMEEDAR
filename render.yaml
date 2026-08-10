@@ -1,0 +1,44 @@
+# Render Blueprint — Baatmeedar Backend Web Service
+services:
+  - type: web
+    name: baatmeedar-api
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /health/live
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: CORS_ORIGINS
+        value: https://baatmeedar.com,http://localhost:5500
+      - key: DATABASE_URL
+        fromDatabase:
+          name: baatmeedar-db
+          property: connectionString
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+
+databases:
+  - name: baatmeedar-db
+    plan: free
+    databaseName: baatmeedar
+    user: baatmeedar_user

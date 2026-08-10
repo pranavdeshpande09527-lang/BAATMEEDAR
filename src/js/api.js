@@ -7,10 +7,10 @@
  * Currently: uses mock responses that simulate the full 5-stage pipeline.
  */
 
-const BASE_URL = 'https://promptathon2026-pranavdeshpande.onrender.com';
+const BASE_URL = window.LOCATION_BACKEND_URL || 'http://localhost:3001';
 
 /** Set to true to use mock data instead of real backend */
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 /* ─────────────────────────────────────────────────────────────
    REAL API CALLS (active when USE_MOCK = false)
@@ -23,6 +23,7 @@ async function _apiPost(path, body) {
     const res = await fetch(`${BASE_URL}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(body),
       signal: controller.signal,
     });
@@ -43,7 +44,7 @@ async function _apiGet(path) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
   try {
-    const res = await fetch(`${BASE_URL}${path}`, { signal: controller.signal });
+    const res = await fetch(`${BASE_URL}${path}`, { credentials: 'include', signal: controller.signal });
     clearTimeout(timeout);
     if (!res.ok) throw new Error(`Server error ${res.status}`);
     return res.json();

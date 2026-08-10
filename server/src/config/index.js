@@ -5,11 +5,14 @@
  * from here; no direct process.env reads anywhere else in the codebase.
  *
  * Validates required vars at startup with actionable, non-sensitive errors.
+ * In test mode (NODE_ENV=test), missing credentials automatically default to safe test values.
  */
 
 import 'dotenv/config';
 import { z } from 'zod';
 import { DEFAULTS } from './defaults.js';
+
+const isTestEnv = process.env.NODE_ENV === 'test';
 
 /* ─────────────────────────────────────────────────────────────
    Schema — validates env vars and coerces types
@@ -21,17 +24,17 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3001),
 
   // Supabase
-  SUPABASE_URL: z.string().url({ message: 'SUPABASE_URL must be a valid URL' }),
-  SUPABASE_ANON_KEY: z.string().min(1, { message: 'SUPABASE_ANON_KEY is required' }),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, { message: 'SUPABASE_SERVICE_ROLE_KEY is required' }),
-  DATABASE_URL: z.string().min(1, { message: 'DATABASE_URL is required' }),
+  SUPABASE_URL: z.string().url().default(isTestEnv ? 'https://test-project.supabase.co' : undefined),
+  SUPABASE_ANON_KEY: z.string().min(1).default(isTestEnv ? 'test-anon-key' : undefined),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).default(isTestEnv ? 'test-service-role-key' : undefined),
+  DATABASE_URL: z.string().min(1).default(isTestEnv ? 'postgresql://test:test@localhost:5432/testdb' : undefined),
 
   // AI Providers
-  GEMINI_API_KEY: z.string().min(1, { message: 'GEMINI_API_KEY is required' }),
-  GROQ_API_KEY: z.string().min(1, { message: 'GROQ_API_KEY is required' }),
+  GEMINI_API_KEY: z.string().min(1).default(isTestEnv ? 'test-gemini-key' : undefined),
+  GROQ_API_KEY: z.string().min(1).default(isTestEnv ? 'test-groq-key' : undefined),
 
   // Research & Retrieval
-  TAVILY_API_KEY: z.string().min(1, { message: 'TAVILY_API_KEY is required' }),
+  TAVILY_API_KEY: z.string().min(1).default(isTestEnv ? 'test-tavily-key' : undefined),
   YOUTUBE_API_KEY: z.string().default(''),
 
   // CORS
@@ -47,7 +50,7 @@ const envSchema = z.object({
   GUEST_SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(DEFAULTS.guestSession.ttlSeconds),
 
   // Logging
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default(isTestEnv ? 'error' : 'info'),
 });
 
 /* ─────────────────────────────────────────────────────────────

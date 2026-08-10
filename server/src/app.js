@@ -1,0 +1,76 @@
+/**
+ * Baatmeedar — Express Application Assembly
+ *
+ * Assembles middleware stack in strict order per middleware.md specification:
+ * 1. Request ID (correlation_id)
+ * 2. Secure headers & CORS
+ * 3. Body limits & JSON parsing
+ * 4. Guest session (cookie management)
+ * 5. Authenticate (optional JWT extraction)
+ * 6. Routes (verify, health, auth, account)
+ * 7. Error handler (error translation & redaction)
+ */
+
+import express from 'express';
+import { requestIdMiddleware } from './middleware/requestId.js';
+import { secureHeadersMiddleware } from './middleware/secureHeaders.js';
+import { bodyLimitsMiddleware } from './middleware/bodyLimits.js';
+import { guestSessionMiddleware } from './middleware/guestSession.js';
+import { authenticateMiddleware } from './middleware/authenticate.js';
+import { errorHandlerMiddleware } from './middleware/errorHandler.js';
+import { verifyRateLimiter, authRateLimiter } from './middleware/rateLimit.js';
+
+import { healthRoutes } from './routes/health.js';
+import { verifyRoutes } from './routes/verify.js';
+import { authRoutes } from './routes/auth.js';
+import { accountRoutes } from './routes/account.js';
+
+/**
+ * Express app factory for flexible testing and production assembly.
+ *
+ * @param {object} opts
+ * @param {object} opts.config
+ * @param {object} [opts.db]
+ * @param {object} [opts.runRepository]
+ * @param {object} [opts.guestSessionRepository]
+ * @param {object} [opts.orchestrator]
+ */
+export function createApp(opts = {}) {
+  const { config, db, runRepository, guestSessionRepository, orchestrator } = opts;
+  const app = express();
+
+  const corsOrigins = config?.server?.corsOrigins || ['http://localhost:5500'];
+  const verifyLimitOpts = config?.server?.rateLimits?.verify || { max: 10, windowMs: 60000 };
+  const authLimitOpts = config?.server?.rateLimits?.auth || { max: 5, windowMs: 60000 };
+  const guestTtl = config?.guestSession?.ttlSeconds || 86400;
+
+  // 1. Request ID
+  app.use(requestIdMiddleware());
+
+  // 2. Secure headers & CORS
+  app.use(secureHeadersMiddleware(corsOrigins));
+
+  // 3. Body limits
+  app.use(bodyLimitsMiddleware());
+
+  // 4. Guest session
+  app.use(guestSessionMiddleware(guestTtl));
+
+  // 5. Authentication (non-blocking JWT extraction)
+  app.use(authenticateMiddleware());
+
+  // Rate limiters
+  const vRateLimiter = verifyRateLimiter(verifyLimitOpts);
+  const aRateLimiter = authRateLimiter(authLimitOpts);
+
+  // 6. Routes
+  app.use('/health', healthRoutes({ db }));
+  app.use('/verify', verifyRoutes({ runRepository, orchestrator, verifyRateLimiter: vRateLimiter }));
+  app.use('/auth', authRoutes({ guestSessionRepository, runRepository, authRateLimiter: aRateLimiter }));
+  app.use('/account', accountRoutes({ runRepository }));
+
+  // 7. Error handler
+  app.use(errorHandlerMiddleware());
+
+  return app;
+}

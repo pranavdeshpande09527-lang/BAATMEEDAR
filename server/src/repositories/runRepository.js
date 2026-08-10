@@ -146,9 +146,21 @@ class InMemoryRunStore {
   }
 
   saveVerifierResult(claimId, verifierResult) {
-    const existing = this.verifierResults.get(claimId) || [];
+    const existing = (this.verifierResults.get(claimId) || []).filter(
+      (v) => v.verifier !== verifierResult.verifier
+    );
     existing.push(verifierResult);
     this.verifierResults.set(claimId, existing);
+  }
+
+  reset() {
+    this.runs.clear();
+    this.claims.clear();
+    this.removedOpinions.clear();
+    this.researchPlans.clear();
+    this.sources.clear();
+    this.verifierResults.clear();
+    this.finalResults.clear();
   }
 
   saveFinalResult(claimId, finalResult) {
@@ -544,5 +556,12 @@ export const runRepository = {
     } catch (err) {
       return memoryStore.requestDeletion(runId, owner);
     }
+  },
+
+  /**
+   * Reset in-memory store (for test cleanup)
+   */
+  async reset() {
+    memoryStore.reset();
   },
 };

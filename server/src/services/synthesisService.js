@@ -26,7 +26,7 @@ export class SynthesisService {
     } else if (groq.verdict === 'contradicted' && gemini.verdict === 'contradicted') {
       finalVerdict = 'contradicted';
       rationale = 'Both independent AI evaluators confirm direct conflict with authoritative sources.';
-    } else if (groq.verdict === gemini.verdict) {
+    } else if (groq.verdict && groq.verdict === gemini.verdict) {
       finalVerdict = groq.verdict;
       rationale = `Independent verifiers reached convergent consensus: ${finalVerdict}.`;
     } else {

@@ -7,7 +7,17 @@
  * Currently: uses mock responses that simulate the full 5-stage pipeline.
  */
 
-const BASE_URL = window.LOCATION_BACKEND_URL || 'http://localhost:3001';
+const isLocal = typeof window !== 'undefined' && (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname === '0.0.0.0'
+);
+
+const DEFAULT_BACKEND_URL = isLocal
+  ? 'http://localhost:5000'
+  : 'https://promptathon2026-pranavdeshpande.onrender.com';
+
+const BASE_URL = window.LOCATION_BACKEND_URL || window.__ENV__?.BACKEND_URL || DEFAULT_BACKEND_URL;
 
 /** Set to true to use mock data instead of real backend */
 const USE_MOCK = false;

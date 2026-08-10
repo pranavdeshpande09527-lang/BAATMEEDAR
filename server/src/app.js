@@ -69,6 +69,22 @@ export function createApp(opts = {}) {
   const aRateLimiter = authRateLimiter(authLimitOpts);
 
   // 7. Routes
+  app.get('/', (_req, res) => {
+    res.json({
+      name: 'Baatmeedar API',
+      description: 'The Gatekeeper of Truth verification service',
+      version: '0.1.0',
+      status: 'online',
+      endpoints: {
+        health: '/health/live',
+        ready: '/health/ready',
+        verify: '/verify',
+        auth: '/auth',
+        account: '/account',
+      },
+    });
+  });
+
   app.use('/health', healthRoutes({ db, adapters }));
   app.use('/verify', verifyRoutes({ runRepository, orchestrator, verifyRateLimiter: vRateLimiter }));
   app.use('/auth', authRoutes({ guestSessionRepository, runRepository, authRateLimiter: aRateLimiter }));

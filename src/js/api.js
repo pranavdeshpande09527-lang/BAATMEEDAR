@@ -15,7 +15,7 @@ const isLocal = typeof window !== 'undefined' && (
 
 const DEFAULT_BACKEND_URL = isLocal
   ? 'http://localhost:5000'
-  : 'https://promptathon2026-pranavdeshpande.onrender.com';
+  : 'https://baatmeedar-1.onrender.com';
 
 const BASE_URL = window.LOCATION_BACKEND_URL || window.__ENV__?.BACKEND_URL || DEFAULT_BACKEND_URL;
 

@@ -12,8 +12,8 @@ const isLocal = typeof window !== 'undefined' && (
 );
 
 const DEFAULT_BACKEND_URL = isLocal
-  ? 'http://localhost:5000'
-  : 'https://baatmeedar-1.onrender.com';
+  ? 'http://localhost:10000'
+  : 'https://baatmeedar.onrender.com';
 
 export const BASE_URL = window.LOCATION_BACKEND_URL || window.__ENV__?.BACKEND_URL || DEFAULT_BACKEND_URL;
 

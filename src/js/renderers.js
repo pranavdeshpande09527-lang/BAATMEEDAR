@@ -177,7 +177,7 @@ export function renderVerdict(verdicts, claims) {
 
   const verdictBlocksHtml = verdicts.map((v, i) => {
     const claim  = claimMap[v.claim_id] || {};
-    const grok   = v.grok   || {};
+    const grok   = v.groq   || v.grok   || {};
     const gemini = v.gemini || {};
     const final  = v.final  || {};
     const fv     = final.verdict || 'inconclusive';
@@ -195,7 +195,7 @@ export function renderVerdict(verdicts, claims) {
 
         <div class="verifier-columns">
           <div class="verifier-col">
-            <div class="verifier-name">Grok / xAI — Independent Verifier</div>
+            <div class="verifier-name">Groq — Independent Verifier</div>
             <div class="verifier-verdict-line">
               <span class="verifier-verdict-text ${grok.verdict || 'inconclusive'}">
                 ${(grok.verdict || 'inconclusive').toUpperCase()}

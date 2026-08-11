@@ -12,7 +12,7 @@ export class SynthesisService {
   async synthesizeVerdict(claim, researchData, verifierResults) {
     getLogger().info({ claim_id: claim.id }, 'Synthesizing Stage 5 editorial result');
 
-    const grok = verifierResults.grok || {};
+    const grok = verifierResults.groq || verifierResults.grok || {};
     const gemini = verifierResults.gemini || {};
     const sources = researchData.sources || [];
     const sourceIds = sources.map((s) => s.id);
@@ -31,7 +31,8 @@ export class SynthesisService {
       rationale = `Independent verifiers reached convergent consensus: ${finalVerdict}.`;
     } else {
       finalVerdict = 'inconclusive';
-      rationale = `Evaluator disagreement between Grok (${grok.verdict || 'unknown'}) and Gemini (${gemini.verdict || 'unknown'}). Available evidence is insufficient to settle the claim conclusively.`;
+      const verifierLabel = grok.verifier === 'groq' ? 'Groq' : 'Grok';
+      rationale = `Evaluator disagreement between ${verifierLabel} (${grok.verdict || 'unknown'}) and Gemini (${gemini.verdict || 'unknown'}). Available evidence is insufficient to settle the claim conclusively.`;
     }
 
     return {

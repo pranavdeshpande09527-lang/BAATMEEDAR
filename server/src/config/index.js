@@ -21,7 +21,7 @@ const isTestEnv = process.env.NODE_ENV === 'test';
 const envSchema = z.object({
   // Environment
   NODE_ENV: z.enum(['development', 'test', 'staging', 'production']).default('development'),
-  PORT: z.coerce.number().int().positive().default(3001),
+  PORT: z.coerce.number().int().positive().default(10000),
 
   // Supabase
   SUPABASE_URL: z.string().url().default(isTestEnv ? 'https://test-project.supabase.co' : undefined),

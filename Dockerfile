@@ -1,7 +1,7 @@
 # Baatmeedar Backend — Multi-stage Production Dockerfile
 # ─────────────────────────────────────────────────────────
 # Build: docker build -t baatmeedar-api .
-# Run:   docker run -p 5000:5000 --env-file .env baatmeedar-api
+# Run:   docker run -p 10000:10000 --env-file .env baatmeedar-api
 
 # ── Base Stage ───────────────────────────────────────────
 FROM node:22-alpine AS base
@@ -38,15 +38,17 @@ COPY --chown=node:node server/scripts ./server/scripts
 WORKDIR /app/server
 
 ENV NODE_ENV=production
-ENV PORT=5000
+# PORT is injected by Render at runtime — do NOT hardcode it here
+# Default to 10000 (Render's default) for local Docker runs; override with --env PORT=...
+ENV PORT=10000
 
-EXPOSE 5000
+EXPOSE 10000
 
 # Use dumb-init as PID 1 for proper signal forwarding
 STOPSIGNAL SIGTERM
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl --fail --silent http://localhost:5000/health/live || exit 1
+  CMD curl --fail --silent http://localhost:${PORT:-10000}/health/live || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "src/server.js"]

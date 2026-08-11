@@ -29,10 +29,10 @@ const app = createApp({
   orchestrator,
 });
 
-// Start HTTP server
-const server = app.listen(config.port, () => {
+// Start HTTP server — bind to 0.0.0.0 so Render's load balancer can route traffic
+const server = app.listen(config.port, '0.0.0.0', () => {
   logger.info(
-    { port: config.port, env: config.env, cors: config.server.corsOrigins },
+    { port: config.port, host: '0.0.0.0', env: config.env, cors: config.server.corsOrigins },
     'Baatmeedar backend service started'
   );
 });

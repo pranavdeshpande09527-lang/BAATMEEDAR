@@ -190,8 +190,9 @@ This runs Vitest integration tests verifying request validation, mock run handli
 
 ## Deployment Status
 
+- **GitHub Pages**: Automated frontend deployment workflow available in `.github/workflows/deploy-gh-pages.yml`.
 - **Docker Containerization**: Available via root `Dockerfile` and `docker-compose.yml`.
-- **Render Deployment**: Supported via `render.yaml` for containerized backend hosting.
+- **Render Deployment**: Supported via `render.yaml` for containerized backend hosting (`https://baatmeedar.onrender.com`).
 - **Firebase Hosting**: Static frontend hosting configuration available in `firebase.json`.
 
 ---

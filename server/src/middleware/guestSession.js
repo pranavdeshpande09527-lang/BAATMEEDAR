@@ -26,28 +26,32 @@ export function guestSessionMiddleware(ttlSeconds) {
       return next();
     }
 
-    // Try to read existing guest session cookie
-    const existingId = parseCookie(req.headers.cookie, COOKIE_NAME);
+    // Try to read existing guest session cookie or header
+    const headerId = typeof req.headers['x-guest-session-id'] === 'string' ? req.headers['x-guest-session-id'].trim() : null;
+    const existingId = parseCookie(req.headers.cookie, COOKIE_NAME) || (headerId || null);
 
     if (existingId) {
       req.guestSession = {
         id: existingId,
         isNew: false,
       };
+      _res.setHeader('x-guest-session-id', existingId);
       return next();
     }
 
     // Create new guest session
     const sessionId = randomUUID();
     const maxAge = ttl * 1000; // ms
+    const isDev = process.env.NODE_ENV === 'development';
 
     _res.cookie(COOKIE_NAME, sessionId, {
       httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development', // HTTPS in prod/staging
-      sameSite: 'lax',
+      secure: !isDev, // Must be true for sameSite='none' in production/staging
+      sameSite: isDev ? 'lax' : 'none',
       maxAge,
       path: '/',
     });
+    _res.setHeader('x-guest-session-id', sessionId);
 
     req.guestSession = {
       id: sessionId,

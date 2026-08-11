@@ -26,17 +26,35 @@ export async function warmUpBackend() {
   } catch {}
 }
 
+let guestSessionId = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('baatmeedar_guest_id') : null;
+
+function updateGuestSessionId(res) {
+  if (!res || !res.headers) return;
+  const headerId = res.headers.get('x-guest-session-id');
+  if (headerId) {
+    guestSessionId = headerId;
+    try {
+      sessionStorage.setItem('baatmeedar_guest_id', headerId);
+    } catch {}
+  }
+}
+
 async function _apiPost(path, body) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120_000); // 120s for Render cold start
+  const headers = { 'Content-Type': 'application/json' };
+  if (guestSessionId) {
+    headers['x-guest-session-id'] = guestSessionId;
+  }
   try {
     const res = await fetch(`${BASE_URL}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       credentials: 'include',
       body: JSON.stringify(body),
       signal: controller.signal,
     });
+    updateGuestSessionId(res);
     clearTimeout(timeout);
     if (!res.ok) {
       let errorMsg = `Server error ${res.status}`;
@@ -65,8 +83,17 @@ async function _apiPost(path, body) {
 async function _apiGet(path) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 45_000);
+  const headers = {};
+  if (guestSessionId) {
+    headers['x-guest-session-id'] = guestSessionId;
+  }
   try {
-    const res = await fetch(`${BASE_URL}${path}`, { credentials: 'include', signal: controller.signal });
+    const res = await fetch(`${BASE_URL}${path}`, {
+      headers,
+      credentials: 'include',
+      signal: controller.signal,
+    });
+    updateGuestSessionId(res);
     clearTimeout(timeout);
     if (!res.ok) {
       let errorMsg = `Server error ${res.status}`;

@@ -58,6 +58,24 @@ describe('Middleware Stack & Integration', () => {
     expect(setCookie).toBeDefined();
     expect(setCookie[0]).toContain('baatmeedar_guest=');
     expect(setCookie[0]).toContain('HttpOnly');
+    expect(res.headers['x-guest-session-id']).toBeDefined();
+  });
+
+  it('returns and accepts x-guest-session-id header for cross-domain guest sessions', async () => {
+    const res = await request(app)
+      .post('/verify')
+      .send({ input_type: 'text', content: 'Valid claim statement for testing.' });
+
+    expect(res.status).toBe(201);
+    const guestHeader = res.headers['x-guest-session-id'];
+    expect(guestHeader).toBeDefined();
+
+    const statusRes = await request(app)
+      .get(`/verify/${res.body.run_id}/status`)
+      .set('x-guest-session-id', guestHeader);
+
+    expect(statusRes.status).toBe(200);
+    expect(statusRes.body.status).toBeDefined();
   });
 
   it('returns formatted safe error response for invalid input', async () => {

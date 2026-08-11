@@ -72,7 +72,8 @@ export function secureHeadersMiddleware(allowedOrigins = []) {
     },
     credentials: true,
     methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-correlation-id', 'idempotency-key'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-correlation-id', 'idempotency-key', 'x-guest-session-id'],
+    exposedHeaders: ['x-correlation-id', 'x-guest-session-id'],
     maxAge: 600, // 10 minute preflight cache
   });
 

@@ -29,11 +29,12 @@ export function isOriginAllowed(origin, allowedOrigins = []) {
     }
   }
 
-  // Always permit official Firebase hosting domains and local development
+  // Always permit official Firebase hosting domains, Vercel deployments, and local development
   if (
     /^https:\/\/prompathon2026(--[a-z0-9-]+)?\.web\.app$/.test(normalizedOrigin) ||
     /^https:\/\/prompathon2026(--[a-z0-9-]+)?\.firebaseapp\.com$/.test(normalizedOrigin) ||
     /^https:\/\/(www\.)?baatmeedar\.com$/.test(normalizedOrigin) ||
+    /^https:\/\/([a-z0-9-]+\.)?vercel\.app$/.test(normalizedOrigin) ||
     /^http:\/\/localhost(:[0-9]+)?$/.test(normalizedOrigin) ||
     /^http:\/\/127\.0\.0\.1(:[0-9]+)?$/.test(normalizedOrigin)
   ) {

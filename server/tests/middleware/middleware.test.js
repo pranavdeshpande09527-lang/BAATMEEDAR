@@ -31,6 +31,13 @@ describe('Middleware Stack & Integration', () => {
     expect(res.headers['access-control-allow-origin']).toBe('http://localhost:5500');
   });
 
+  it('allows Vercel frontend origins via CORS pattern match', async () => {
+    const res = await request(app)
+      .get('/health/live')
+      .set('Origin', 'https://baatmeedar.vercel.app');
+    expect(res.headers['access-control-allow-origin']).toBe('https://baatmeedar.vercel.app');
+  });
+
   it('rejects CORS for disallowed origin', async () => {
     const res = await request(app)
       .get('/health/live')

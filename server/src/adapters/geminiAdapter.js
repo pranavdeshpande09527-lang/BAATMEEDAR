@@ -31,7 +31,7 @@ export class GeminiAdapter {
   constructor(apiKey) {
     this.apiKey = apiKey;
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.modelName = 'gemini-1.5-flash';
+    this.modelName = process.env.GEMINI_MODEL || 'gemini-flash-latest';
   }
 
   /**
@@ -39,7 +39,7 @@ export class GeminiAdapter {
    */
   async extractClaims(inputText) {
     const startTime = Date.now();
-    const model = this.genAI.getGenerativeAIModel({
+    const model = this.genAI.getGenerativeModel({
       model: this.modelName,
       generationConfig: { responseMimeType: 'application/json' },
     });
@@ -77,7 +77,7 @@ export class GeminiAdapter {
    */
   async planResearch(claim) {
     const startTime = Date.now();
-    const model = this.genAI.getGenerativeAIModel({
+    const model = this.genAI.getGenerativeModel({
       model: this.modelName,
       generationConfig: { responseMimeType: 'application/json' },
     });
@@ -115,7 +115,7 @@ export class GeminiAdapter {
    */
   async analyzeEvidence(claim, sources) {
     const startTime = Date.now();
-    const model = this.genAI.getGenerativeAIModel({
+    const model = this.genAI.getGenerativeModel({
       model: this.modelName,
       generationConfig: { responseMimeType: 'application/json' },
     });
@@ -153,7 +153,7 @@ export class GeminiAdapter {
    */
   async verify(claim, evidencePacket) {
     const startTime = Date.now();
-    const model = this.genAI.getGenerativeAIModel({
+    const model = this.genAI.getGenerativeModel({
       model: this.modelName,
       generationConfig: { responseMimeType: 'application/json' },
     });

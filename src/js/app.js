@@ -5,8 +5,8 @@
  * the API layer with the render functions.
  */
 
-import { submitVerification, getStatus, getResults, warmUpBackend } from './api.js?v=20260811b';
-import { renderStage1, renderStage2, renderStage3, renderVerdict } from './renderers.js?v=20260811b';
+import { submitVerification, getStatus, getResults, warmUpBackend } from './api.js?v=20260811c';
+import { renderStage1, renderStage2, renderStage3, renderVerdict } from './renderers.js?v=20260811c';
 
 /* ─────────────────────────────────────────────────────────────
    State

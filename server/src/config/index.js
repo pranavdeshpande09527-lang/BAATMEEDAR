@@ -27,7 +27,7 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url().default(isTestEnv ? 'https://test-project.supabase.co' : undefined),
   SUPABASE_ANON_KEY: z.string().min(1).default(isTestEnv ? 'test-anon-key' : undefined),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).default(isTestEnv ? 'test-service-role-key' : undefined),
-  DATABASE_URL: z.string().min(1).default(isTestEnv ? 'postgresql://test:test@localhost:5432/testdb' : undefined),
+  DATABASE_URL: z.string().default(''),
 
   // AI Providers
   GEMINI_API_KEY: z.string().min(1).default(isTestEnv ? 'test-gemini-key' : undefined),

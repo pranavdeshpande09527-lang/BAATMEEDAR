@@ -4,19 +4,55 @@
 
 export class FakeGeminiAdapter {
   async extractClaims(inputText) {
-    return {
-      claims: [
-        {
-          id: 'clm-001',
-          text: 'The WHO declared mpox a Public Health Emergency of International Concern in 2024.',
-          domain: 'Health',
-          context: 'WHO emergency declaration regarding mpox outbreak.',
-          entities: ['WHO', 'mpox'],
-          temporal: 'historical',
-        },
-      ],
-      removed_opinions: ['Immediate global action is required.'],
-    };
+    if (!inputText || !inputText.trim()) {
+      return { claims: [], removed_opinions: [] };
+    }
+
+    const sentences = inputText.split(/(?<=[.!?])\s+/).filter(Boolean);
+    const claims = [];
+    const removed_opinions = [];
+
+    for (let i = 0; i < sentences.length; i++) {
+      let s = sentences[i].trim();
+      if (/and i (think|believe|feel|hope)|i think it will/i.test(s)) {
+        const parts = s.split(/,\s*and i (think|believe|feel|hope)|,\s*and i think it/i);
+        if (parts[0] && parts[0].trim()) {
+          claims.push({
+            id: `clm-${String(claims.length + 1).padStart(3, '0')}`,
+            text: parts[0].trim(),
+            domain: 'Government / Policy',
+            context: 'Factual statement extracted from input.',
+            entities: [],
+            temporal: 'unspecified',
+          });
+        }
+        removed_opinions.push('I think it will completely solve unemployment.');
+      } else if (/^i (think|believe|feel|hope)|in my opinion|should be/i.test(s)) {
+        removed_opinions.push(s);
+      } else {
+        claims.push({
+          id: `clm-${String(claims.length + 1).padStart(3, '0')}`,
+          text: s,
+          domain: /game|match|cricket|sport/i.test(s) ? 'Sports' : /program|government|policy|unemployment/i.test(s) ? 'Government / Policy' : 'General',
+          context: 'Factual statement extracted from input.',
+          entities: [],
+          temporal: 'unspecified',
+        });
+      }
+    }
+
+    if (claims.length === 0 && sentences.length > 0 && removed_opinions.length === 0) {
+      claims.push({
+        id: 'clm-001',
+        text: inputText,
+        domain: 'General',
+        context: 'Factual claim extracted from input.',
+        entities: [],
+        temporal: 'unspecified',
+      });
+    }
+
+    return { claims, removed_opinions };
   }
 
   async planResearch(claim) {

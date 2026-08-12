@@ -61,8 +61,14 @@ export class ResearchService {
     // 3. Groq independent analysis
     const groqAnalysisRes = await this.groq.analyze(claim, sources);
 
-    // 4. Gemini independent analysis
-    const geminiAnalysisRes = await this.gemini.analyzeEvidence(claim, sources);
+    // 4. Gemini independent analysis (with Groq fallback if Gemini is rate limited)
+    let geminiAnalysisRes;
+    try {
+      geminiAnalysisRes = await this.gemini.analyzeEvidence(claim, sources);
+    } catch (err) {
+      logger.warn({ claim_id: claim.id, err: err.message }, 'Gemini analysis failed in Stage 3, using Groq fallback');
+      geminiAnalysisRes = await this.groq.analyze(claim, sources);
+    }
 
     return {
       claim_id: claim.id,

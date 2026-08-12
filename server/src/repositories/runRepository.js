@@ -295,7 +295,7 @@ export const runRepository = {
         'SELECT * FROM verification_runs WHERE id = $1',
         [runId]
       );
-      if (!runRows.length) return null;
+      if (!runRows.length) return memoryStore.getResults(runId, owner);
       const run = runRows[0];
 
       if (owner && (run.owner_type !== owner.type || run.owner_id !== owner.id)) {

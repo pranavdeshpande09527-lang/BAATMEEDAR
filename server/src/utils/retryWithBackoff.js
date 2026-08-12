@@ -31,7 +31,7 @@ export async function retryWithBackoff(fn, opts = {}) {
     maxRetries = 3,
     baseDelayMs = 1000,
     maxDelayMs = 30000,
-    deadlineMs = 120000,
+    deadlineMs = 180000,
     logger = getLogger(),
   } = opts;
 

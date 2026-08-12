@@ -23,6 +23,7 @@ export class VerificationService {
     // groq is NOT used for Stage 4 directly (it's a Stage 3 analyzer)
     this.xai = adapters.xai || adapters.groq;  // fallback for test environments
     this.gemini = adapters.gemini;
+    this.groq = adapters.groq;
   }
 
   async verifyClaim(claim, researchData) {

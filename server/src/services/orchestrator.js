@@ -72,6 +72,15 @@ export class Orchestrator {
       };
     }
 
+    if (stage === 'input_received' || /transcript|extract readable|ssrf|url/i.test(msg)) {
+      return {
+        stage: 'input_received',
+        code: 'input_extraction_failed',
+        message: msg || 'Failed to extract readable content from the provided input.',
+        retryable: false,
+      };
+    }
+
     if (stage === 'researching' || /no usable sources|search failed/i.test(msg)) {
       return {
         stage: 'researching',
@@ -123,10 +132,17 @@ export class Orchestrator {
       await this.statusPublisher.publishStage(runId, 'input_received', 'processing');
       const inputRecord = await this.inputService.processInput(inputPayload.input_type, inputPayload.content);
 
+      if (inputRecord.extraction_status === 'unavailable_transcript') {
+        throw new Error('Transcript is unavailable for this YouTube video.');
+      }
+      if (inputRecord.extraction_status === 'failed' || !inputRecord.raw_text_preview?.trim()) {
+        throw new Error('Could not extract readable content from the provided source URL.');
+      }
+
       // Stage 2: Claim Extraction — not fault-tolerant; no claims = nothing to verify
       activeStage = 'extracting_claims';
       await this.statusPublisher.publishStage(runId, 'extracting_claims', 'processing');
-      const extraction = await this.claimExtractor.extractClaims(inputRecord.raw_text_preview || inputPayload.content);
+      const extraction = await this.claimExtractor.extractClaims(inputRecord.raw_text_preview);
 
       await this.repo.saveClaims(runId, extraction.claims, extraction.removed_opinions);
       await auditLog({ event: 'stage_completed', run_id: runId, details: { stage: 'extracting_claims', claims_count: extraction.claims.length } });
@@ -137,42 +153,45 @@ export class Orchestrator {
         return;
       }
 
-      // Stage 3: Research per claim. Missing research is terminal.
+      // Stage 3: Research per claim (concurrently up to 5 claims max).
       activeStage = 'researching';
       await this.statusPublisher.publishStage(runId, 'researching', 'processing');
-      const researchDataList = [];
-      for (const claim of extraction.claims) {
-        const researchData = await this.researcher.researchClaim(claim);
-        await this.repo.saveResearch(claim.id, researchData.hermes_plan, researchData.sources);
-        researchDataList.push(researchData);
-      }
+      const targetClaims = extraction.claims.slice(0, 5);
+      const researchDataList = await Promise.all(
+        targetClaims.map(async (claim) => {
+          const researchData = await this.researcher.researchClaim(claim);
+          await this.repo.saveResearch(claim.id, researchData.hermes_plan, researchData.sources);
+          return researchData;
+        })
+      );
       await auditLog({ event: 'stage_completed', run_id: runId, details: { stage: 'researching' } });
 
-      // Stage 4: both independent verifiers are required before synthesis.
+      // Stage 4: both independent verifiers are required before synthesis (concurrent across claims).
       activeStage = 'verifying';
       await this.statusPublisher.publishStage(runId, 'verifying', 'processing');
-      const verificationList = [];
-      for (let i = 0; i < extraction.claims.length; i++) {
-        const claim = extraction.claims[i];
-        const researchData = researchDataList[i];
-        const verifierRes = await this.verifier.verifyClaim(claim, researchData);
-        await this.repo.saveVerifierResult(claim.id, verifierRes.grok);
-        await this.repo.saveVerifierResult(claim.id, verifierRes.gemini);
-        verificationList.push(verifierRes);
-      }
+      const verificationList = await Promise.all(
+        targetClaims.map(async (claim, i) => {
+          const researchData = researchDataList[i];
+          const verifierRes = await this.verifier.verifyClaim(claim, researchData);
+          await this.repo.saveVerifierResult(claim.id, verifierRes.grok);
+          await this.repo.saveVerifierResult(claim.id, verifierRes.gemini);
+          return verifierRes;
+        })
+      );
       await auditLog({ event: 'stage_completed', run_id: runId, details: { stage: 'verifying' } });
 
       // Stage 5: Editorial Synthesis
       activeStage = 'synthesizing';
       await this.statusPublisher.publishStage(runId, 'synthesizing', 'processing');
-      for (let i = 0; i < extraction.claims.length; i++) {
-        const claim = extraction.claims[i];
-        const researchData = researchDataList[i];
-        const verifierRes = verificationList[i];
+      await Promise.all(
+        targetClaims.map(async (claim, i) => {
+          const researchData = researchDataList[i];
+          const verifierRes = verificationList[i];
 
-        const finalResult = await this.synthesizer.synthesizeVerdict(claim, researchData, verifierRes);
-        await this.repo.saveFinalResult(claim.id, finalResult.final);
-      }
+          const finalResult = await this.synthesizer.synthesizeVerdict(claim, researchData, verifierRes);
+          await this.repo.saveFinalResult(claim.id, finalResult.final);
+        })
+      );
 
       // Complete run
       activeStage = 'complete';

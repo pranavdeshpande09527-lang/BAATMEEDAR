@@ -14,11 +14,15 @@ import { runRepository } from './repositories/runRepository.js';
 import { guestSessionRepository } from './repositories/guestSessionRepository.js';
 import { orchestrator } from './services/orchestrator.js';
 
+import { createAdapters } from './adapters/adapterFactory.js';
+
 // Initialize logger
 const logger = initLogger(config.logging.level);
 
 // Initialize Supabase auth client
 initAuth(config.supabase.url, config.supabase.anonKey);
+
+const adapters = createAdapters(config);
 
 // Assemble app
 const app = createApp({
@@ -27,6 +31,7 @@ const app = createApp({
   runRepository,
   guestSessionRepository,
   orchestrator,
+  adapters,
 });
 
 // Start HTTP server — bind to 0.0.0.0 so Render's load balancer can route traffic

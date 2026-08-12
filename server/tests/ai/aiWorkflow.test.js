@@ -114,7 +114,7 @@ describe('Layer 4: AI Workflow & Groundedness Test Suite (09_testing/ai_testing.
   describe('Evaluator Disagreement & Calibrated Inconclusive Verdict', () => {
     it('forces final verdict to inconclusive whenever evaluator stance diverges', async () => {
       const claim = { id: 'clm-002', text: 'Divergent claim' };
-      const researchData = { claim_id: 'clm-002', sources: [] };
+      const researchData = { claim_id: 'clm-002', sources: [{ id: 'src-001' }] };
 
       const testMatrix = [
         { grok: 'supported', gemini: 'contradicted', expected: 'inconclusive' },
@@ -126,8 +126,8 @@ describe('Layer 4: AI Workflow & Groundedness Test Suite (09_testing/ai_testing.
 
       for (const row of testMatrix) {
         const verifiers = {
-          grok: { verdict: row.grok, confidence: 80, reasoning: 'R1', evidence_ids: [], limitations: 'None' },
-          gemini: { verdict: row.gemini, confidence: 80, reasoning: 'R2', evidence_ids: [], limitations: 'None' },
+          grok: { verdict: row.grok, confidence: 80, reasoning: 'R1', evidence_ids: row.grok === 'inconclusive' ? [] : ['src-001'], limitations: 'None' },
+          gemini: { verdict: row.gemini, confidence: 80, reasoning: 'R2', evidence_ids: row.gemini === 'inconclusive' ? [] : ['src-001'], limitations: 'None' },
         };
         const res = await synthesizer.synthesizeVerdict(claim, researchData, verifiers);
         expect(res.final.verdict).toBe(row.expected);

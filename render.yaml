@@ -7,7 +7,7 @@ services:
     dockerContext: .
     plan: free
     region: oregon
-    healthCheckPath: /health/live
+    healthCheckPath: /health/ready
     autoDeploy: true
     buildFilter:
       paths:

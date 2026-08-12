@@ -115,6 +115,10 @@ export function verifyRoutes(deps = {}) {
         response.partial = run.partial;
       }
 
+      if (run.failure) {
+        response.failure = run.failure;
+      }
+
       res.json(response);
     } catch (err) {
       next(err);

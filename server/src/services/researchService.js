@@ -9,6 +9,9 @@
  *
  * Groq and Gemini analyze the same evidence packet independently, without
  * seeing each other's conclusions.
+ *
+ * Research must produce usable retrieved evidence before the claim can be
+ * verified. Provider failures and empty retrieval are terminal for the claim.
  */
 
 import { getLogger } from '../logging/logger.js';
@@ -31,13 +34,12 @@ export class ResearchService {
     logger.info({ claim_id: claim.id }, 'Executing Stage 3 research');
 
     // 1. Hermes research plan — produces full schema including groq_task and gemini_task
+    //    This step is NOT isolated — if Gemini planResearch fails, Stage 3 cannot proceed.
     const hermesPlan = await this.gemini.planResearch(claim);
 
-    // 2. Tavily source discovery using Hermes-provided targeted queries
+    // 2. Tavily source discovery
     const queries = hermesPlan.tavily_queries?.length ? hermesPlan.tavily_queries : [claim.text];
     const rawSources = await this.tavily.search(queries);
-
-    // Format sources as attributed evidence records with stable IDs and provenance
     const sources = rawSources.map((s, idx) => ({
       id: `src-${String(idx + 1).padStart(3, '0')}`,
       url: s.url,
@@ -53,15 +55,13 @@ export class ResearchService {
     logger.info({ claim_id: claim.id, sources_count: sources.length }, 'Stage 3 sources retrieved');
 
     if (sources.length === 0) {
-      logger.warn({ claim_id: claim.id }, 'No sources retrieved from Tavily — research will be incomplete');
+      throw new Error(`Stage 3 research failed: no usable sources were retrieved for claim ${claim.id}`);
     }
 
-    // 3. Groq independent analysis — assigned task from Hermes groq_task
-    // Receives same evidence packet but produces analysis independently
+    // 3. Groq independent analysis
     const groqAnalysisRes = await this.groq.analyze(claim, sources);
 
-    // 4. Gemini independent analysis — assigned task from Hermes gemini_task
-    // Receives same evidence packet but produces analysis independently
+    // 4. Gemini independent analysis
     const geminiAnalysisRes = await this.gemini.analyzeEvidence(claim, sources);
 
     return {

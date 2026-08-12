@@ -90,7 +90,7 @@ export function createApp(opts = {}) {
     });
   });
 
-  app.use('/health', healthRoutes({ db, adapters }));
+  app.use('/health', healthRoutes({ db, adapters, config }));
   app.use('/verify', verifyRoutes({ runRepository, orchestrator, verifyRateLimiter: vRateLimiter }));
   app.use('/auth', authRoutes({ guestSessionRepository, runRepository, authRateLimiter: aRateLimiter }));
   app.use('/account', accountRoutes({ runRepository }));

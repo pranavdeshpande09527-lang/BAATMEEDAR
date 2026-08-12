@@ -30,6 +30,7 @@ export const WorkflowStage = z.enum([
   'verifying',
   'synthesizing',
   'complete',
+  'failed',
 ]);
 
 /** Evidence stance toward a claim */
@@ -65,6 +66,7 @@ export const ErrorCode = z.enum([
   'timeout',
   'rate_limited',
   'provider_unavailable',
+  'database_unavailable',
   'malformed_output',
   'authorization_denied',
   'not_found',

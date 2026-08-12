@@ -3,12 +3,16 @@
  *
  * Handles creation, read, stage transitions, ownership filtering, and deletion
  * requests for verification runs.
- * Supports both PostgreSQL pool persistence and an in-memory fallback store
- * for unit testing or when DB connection is not configured.
+ * Supports PostgreSQL pool persistence, or explicit in-memory store fallback when
+ * DB connection is not configured in local development/test mode.
+ *
+ * In production/staging or when a database pool is configured, DB failures MUST
+ * throw databaseUnavailableError instead of falling back to ephemeral memory.
  */
 
 import { db } from '../db/client.js';
 import { getLogger } from '../logging/logger.js';
+import { databaseUnavailableError } from '../schemas/errors.js';
 
 class InMemoryRunStore {
   constructor() {
@@ -39,6 +43,7 @@ class InMemoryRunStore {
       status: 'accepted',
       current_stage: 'accepted',
       idempotency_key: runData.idempotency_key || null,
+      failure: null,
       created_at: now,
       updated_at: now,
     };
@@ -60,6 +65,7 @@ class InMemoryRunStore {
       status: run.status,
       current_stage: run.current_stage,
       partial: run.partial || null,
+      failure: run.failure || null,
     };
   }
 
@@ -126,7 +132,7 @@ class InMemoryRunStore {
     };
   }
 
-  updateStage(runId, stage, status = 'processing', partialData = null) {
+  updateStage(runId, stage, status = 'processing', partialData = null, failureData = null) {
     const run = this.runs.get(runId);
     if (!run) return null;
     run.current_stage = stage;
@@ -134,6 +140,9 @@ class InMemoryRunStore {
     run.updated_at = new Date().toISOString();
     if (partialData) {
       run.partial = { ...(run.partial || {}), ...partialData };
+    }
+    if (failureData) {
+      run.failure = failureData;
     }
     return run;
   }
@@ -242,8 +251,8 @@ export const runRepository = {
       const { rows } = await db.query(query, values);
       return rows[0];
     } catch (err) {
-      getLogger().warn({ err: err.message }, 'DB query failed, falling back to memory store');
-      return memoryStore.create(data);
+      getLogger().error({ err: err.message, runId: data.id }, 'Database error during run creation');
+      throw databaseUnavailableError({ operation: 'create_run', originalError: err.message });
     }
   },
 
@@ -255,7 +264,7 @@ export const runRepository = {
 
     try {
       const { rows } = await db.query(
-        'SELECT status, current_stage, owner_type, owner_id FROM verification_runs WHERE id = $1',
+        'SELECT status, current_stage, failure, owner_type, owner_id FROM verification_runs WHERE id = $1',
         [runId]
       );
       if (!rows.length) return null;
@@ -263,9 +272,14 @@ export const runRepository = {
       if (owner && (run.owner_type !== owner.type || run.owner_id !== owner.id)) {
         return null;
       }
-      return { status: run.status, current_stage: run.current_stage };
+      return {
+        status: run.status,
+        current_stage: run.current_stage,
+        failure: run.failure || null,
+      };
     } catch (err) {
-      return memoryStore.getStatus(runId, owner);
+      getLogger().error({ err: err.message, runId }, 'Database error getting status');
+      throw databaseUnavailableError({ operation: 'get_status', originalError: err.message });
     }
   },
 
@@ -373,28 +387,32 @@ export const runRepository = {
         verdicts,
       };
     } catch (err) {
-      return memoryStore.getResults(runId, owner);
+      getLogger().error({ err: err.message, runId }, 'Database error getting results');
+      throw databaseUnavailableError({ operation: 'get_results', originalError: err.message });
     }
   },
 
   /**
    * Update run stage & status
    */
-  async updateStage(runId, stage, status = 'processing', partialData = null) {
-    if (!db.pool) return memoryStore.updateStage(runId, stage, status, partialData);
+  async updateStage(runId, stage, status = 'processing', partialData = null, failureData = null) {
+    if (!db.pool) return memoryStore.updateStage(runId, stage, status, partialData, failureData);
 
     try {
       const now = new Date().toISOString();
+      const failureJson = failureData ? JSON.stringify(failureData) : null;
       const { rows } = await db.query(
         `UPDATE verification_runs
-         SET current_stage = $1, status = $2, updated_at = $3
+         SET current_stage = $1, status = $2, updated_at = $3,
+             failure = COALESCE($5::jsonb, failure)
          WHERE id = $4
          RETURNING *;`,
-        [stage, status, now, runId]
+        [stage, status, now, runId, failureJson]
       );
       return rows[0] || null;
     } catch (err) {
-      return memoryStore.updateStage(runId, stage, status, partialData);
+      getLogger().error({ err: err.message, runId, stage, status }, 'Database error updating stage');
+      throw databaseUnavailableError({ operation: 'update_stage', originalError: err.message });
     }
   },
 
@@ -402,9 +420,10 @@ export const runRepository = {
    * Save extracted claims
    */
   async saveClaims(runId, claims, removedOpinions = []) {
-    memoryStore.saveClaims(runId, claims, removedOpinions);
+    if (!db.pool) {
+      return memoryStore.saveClaims(runId, claims, removedOpinions);
+    }
 
-    if (!db.pool) return;
     try {
       for (let i = 0; i < claims.length; i++) {
         const c = claims[i];
@@ -423,6 +442,7 @@ export const runRepository = {
       }
     } catch (err) {
       getLogger().error({ err: err.message, runId }, 'Failed to persist claims in DB');
+      throw databaseUnavailableError({ operation: 'save_claims', originalError: err.message });
     }
   },
 
@@ -430,9 +450,10 @@ export const runRepository = {
    * Save research plan & sources
    */
   async saveResearch(claimId, plan, sources = []) {
-    memoryStore.saveResearch(claimId, plan, sources);
+    if (!db.pool) {
+      return memoryStore.saveResearch(claimId, plan, sources);
+    }
 
-    if (!db.pool) return;
     try {
       if (plan) {
         await db.query(
@@ -452,6 +473,7 @@ export const runRepository = {
       }
     } catch (err) {
       getLogger().error({ err: err.message, claimId }, 'Failed to persist research in DB');
+      throw databaseUnavailableError({ operation: 'save_research', originalError: err.message });
     }
   },
 
@@ -459,9 +481,10 @@ export const runRepository = {
    * Save verifier result
    */
   async saveVerifierResult(claimId, verifierResult) {
-    memoryStore.saveVerifierResult(claimId, verifierResult);
+    if (!db.pool) {
+      return memoryStore.saveVerifierResult(claimId, verifierResult);
+    }
 
-    if (!db.pool) return;
     try {
       await db.query(
         `INSERT INTO verifier_results (id, claim_id, verifier, verdict, confidence, reasoning, evidence_ids, limitations)
@@ -480,6 +503,7 @@ export const runRepository = {
       );
     } catch (err) {
       getLogger().error({ err: err.message, claimId }, 'Failed to persist verifier result in DB');
+      throw databaseUnavailableError({ operation: 'save_verifier_result', originalError: err.message });
     }
   },
 
@@ -487,9 +511,10 @@ export const runRepository = {
    * Save final synthesized result
    */
   async saveFinalResult(claimId, finalResult) {
-    memoryStore.saveFinalResult(claimId, finalResult);
+    if (!db.pool) {
+      return memoryStore.saveFinalResult(claimId, finalResult);
+    }
 
-    if (!db.pool) return;
     try {
       await db.query(
         `INSERT INTO final_results (claim_id, verdict, rationale, supporting_evidence_ids, conflicting_evidence_ids, sources_cited, limitations)
@@ -513,6 +538,7 @@ export const runRepository = {
       );
     } catch (err) {
       getLogger().error({ err: err.message, claimId }, 'Failed to persist final result in DB');
+      throw databaseUnavailableError({ operation: 'save_final_result', originalError: err.message });
     }
   },
 
@@ -543,7 +569,8 @@ export const runRepository = {
 
       return { runs: rows, total };
     } catch (err) {
-      return memoryStore.listByOwner(owner, pagination);
+      getLogger().error({ err: err.message }, 'Database error listing runs');
+      throw databaseUnavailableError({ operation: 'list_by_owner', originalError: err.message });
     }
   },
 
@@ -560,7 +587,8 @@ export const runRepository = {
       );
       return rowCount > 0;
     } catch (err) {
-      return memoryStore.requestDeletion(runId, owner);
+      getLogger().error({ err: err.message, runId }, 'Database error requesting deletion');
+      throw databaseUnavailableError({ operation: 'request_deletion', originalError: err.message });
     }
   },
 

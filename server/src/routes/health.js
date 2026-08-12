@@ -9,12 +9,30 @@ import { Router } from 'express';
 import { telemetry } from '../logging/telemetry.js';
 
 /**
+ * Helper to assess whether a provider adapter is properly configured
+ * @param {object} adapter
+ * @returns {'configured' | 'mock' | 'unconfigured'}
+ */
+function evaluateProviderStatus(adapter) {
+  if (!adapter) return 'unconfigured';
+  if (adapter.constructor?.name?.startsWith('Fake')) {
+    return 'mock';
+  }
+  if (adapter.apiKey && typeof adapter.apiKey === 'string' && adapter.apiKey.trim().length > 0) {
+    return 'configured';
+  }
+  return 'unconfigured';
+}
+
+/**
  * @param {object} deps
  * @param {object} [deps.db] — database pool for readiness check
  * @param {object} [deps.adapters] — external provider adapters
+ * @param {object} [deps.config] — application configuration
  */
 export function healthRoutes(deps = {}) {
   const router = Router();
+  const isProd = deps.config?.isProd || process.env.NODE_ENV === 'production';
 
   /**
    * GET /health/live — Liveness probe.
@@ -36,8 +54,8 @@ export function healthRoutes(deps = {}) {
     const checks = {};
     let ready = true;
 
-    // Database check
-    if (deps.db) {
+    // 1. Database check
+    if (deps.db?.pool) {
       try {
         await deps.db.query('SELECT 1');
         checks.database = 'ok';
@@ -45,15 +63,34 @@ export function healthRoutes(deps = {}) {
         checks.database = 'unavailable';
         ready = false;
       }
+    } else if (deps.db) {
+      // If DB interface exists but no connection pool is initialized
+      checks.database = isProd ? 'unavailable' : 'not_configured';
+      if (isProd) ready = false;
     } else {
-      checks.database = 'not_configured';
+      checks.database = isProd ? 'unavailable' : 'not_configured';
+      if (isProd) ready = false;
     }
 
-    // Provider check
+    // 2. Provider checks
+    const geminiStatus = evaluateProviderStatus(deps.adapters?.gemini);
+    const groqStatus = evaluateProviderStatus(deps.adapters?.groq);
+    const tavilyStatus = evaluateProviderStatus(deps.adapters?.tavily);
+    const resendStatus = evaluateProviderStatus(deps.adapters?.resend);
+
     checks.providers = {
-      gemini: deps.adapters?.gemini ? 'configured' : 'mock/unconfigured',
-      resend: deps.adapters?.resend ? 'configured' : 'mock/unconfigured',
+      gemini: geminiStatus,
+      groq: groqStatus,
+      tavily: tavilyStatus,
+      resend: resendStatus,
     };
+
+    // In production, required providers (gemini, groq, tavily) must be 'configured'
+    if (isProd) {
+      if (geminiStatus !== 'configured' || groqStatus !== 'configured' || tavilyStatus !== 'configured') {
+        ready = false;
+      }
+    }
 
     const statusCode = ready ? 200 : 503;
     res.status(statusCode).json({ status: ready ? 'ready' : 'not_ready', checks });
@@ -68,4 +105,3 @@ export function healthRoutes(deps = {}) {
 
   return router;
 }
-

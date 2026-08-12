@@ -105,6 +105,16 @@ export function conflictError(message = 'Conflict with existing resource.') {
   return new AppError(message, 'conflict', 409);
 }
 
+export function databaseUnavailableError(diagnostics) {
+  return new AppError(
+    'A database operation failed. The requested operation could not be persisted or fetched.',
+    'database_unavailable',
+    503,
+    undefined,
+    diagnostics
+  );
+}
+
 export function internalError(diagnostics) {
   return new AppError(
     'An internal error occurred. Please try again or contact support.',

@@ -186,7 +186,7 @@ describe('AI Quality: 3. Epistemic Calibration', () => {
       grok: { verdict: 'supported', confidence: 85, reasoning: 'Grok supports.', evidence_ids: ['src-001'], limitations: 'N/A' },
       gemini: { verdict: 'contradicted', confidence: 70, reasoning: 'Gemini contradicts.', evidence_ids: ['src-001'], limitations: 'N/A' },
     };
-    const res = await synthesizer.synthesizeVerdict(claim, { sources: [] }, verifiers);
+    const res = await synthesizer.synthesizeVerdict(claim, { sources: [{ id: 'src-001' }] }, verifiers);
     expect(res.final.verdict).toBe('inconclusive');
     expect(res.final.rationale).toContain('Grok');
     expect(res.final.rationale).toContain('Gemini');
@@ -197,7 +197,7 @@ describe('AI Quality: 3. Epistemic Calibration', () => {
       grok: { verdict: 'inconclusive', confidence: 40, reasoning: 'Insufficient evidence.', evidence_ids: [], limitations: 'Stale sources.' },
       gemini: { verdict: 'inconclusive', confidence: 45, reasoning: 'Coverage too narrow.', evidence_ids: [], limitations: 'Stale sources.' },
     };
-    const res = await synthesizer.synthesizeVerdict(claim, { sources: [] }, verifiers);
+    const res = await synthesizer.synthesizeVerdict(claim, { sources: [{ id: 'src-001' }] }, verifiers);
     expect(res.final.verdict).toBe('inconclusive');
   });
 
@@ -224,7 +224,7 @@ describe('AI Quality: 3. Epistemic Calibration', () => {
       grok: { verdict: 'supported', confidence: 80, reasoning: 'Supported.', evidence_ids: ['src-001'], limitations: 'N/A' },
       gemini: { verdict: 'inconclusive', confidence: 50, reasoning: 'Inconclusive.', evidence_ids: [], limitations: 'Missing authority.' },
     };
-    const res = await synthesizer.synthesizeVerdict(claim, { sources: [] }, verifiers);
+    const res = await synthesizer.synthesizeVerdict(claim, { sources: [{ id: 'src-001' }] }, verifiers);
     expect(res.final.verdict).toBe('inconclusive');
   });
 });
@@ -336,7 +336,7 @@ describe('AI Quality: 6. Provider Failure Handling', () => {
     const fakes = createConfigurableAdapters({ failGeminiVerify: true });
     const service = new VerificationService(fakes);
     const claim = { id: 'clm-fail02', text: 'Gemini failure test.' };
-    const researchData = { sources: [] };
+    const researchData = { sources: [{ id: 'src-001' }] };
 
     await expect(service.verifyClaim(claim, researchData)).rejects.toThrow('Gemini verification timed out');
   });
@@ -354,28 +354,26 @@ describe('AI Quality: 6. Provider Failure Handling', () => {
    7. EMPTY EVIDENCE — No confident verdict without sources
    ───────────────────────────────────────────────────────────── */
 describe('AI Quality: 7. Empty Evidence Handling', () => {
-  it('returns inconclusive rationale when no sources were retrieved', async () => {
+  it('blocks synthesis when no sources were retrieved', async () => {
     const claim = { id: 'clm-empty01', text: 'Claim with no evidence.' };
     const researchData = { sources: [] };
     const verifiers = {
       grok: { verdict: 'inconclusive', confidence: 10, reasoning: 'No sources found.', evidence_ids: [], limitations: 'Empty evidence packet.' },
       gemini: { verdict: 'inconclusive', confidence: 15, reasoning: 'Evidence packet is empty.', evidence_ids: [], limitations: 'Empty evidence packet.' },
     };
-    const res = await synthesizer.synthesizeVerdict(claim, researchData, verifiers);
-    expect(res.final.verdict).toBe('inconclusive');
-    expect(res.final.sources_cited).toHaveLength(0);
+    await expect(synthesizer.synthesizeVerdict(claim, researchData, verifiers))
+      .rejects.toThrow('no research evidence');
   });
 
-  it('synthesis limitations field propagates from verifier when sources empty', async () => {
+  it('does not convert an empty evidence packet into a normal result', async () => {
     const claim = { id: 'clm-empty02', text: 'Empty evidence claim.' };
     const researchData = { sources: [] };
     const verifiers = {
       grok: { verdict: 'inconclusive', confidence: 5, reasoning: 'No data.', evidence_ids: [], limitations: 'No sources retrieved.' },
       gemini: { verdict: 'inconclusive', confidence: 5, reasoning: 'No data.', evidence_ids: [], limitations: 'Coverage insufficient.' },
     };
-    const res = await synthesizer.synthesizeVerdict(claim, researchData, verifiers);
-    expect(res.final.limitations).toBeTruthy();
-    expect(typeof res.final.limitations).toBe('string');
+    await expect(synthesizer.synthesizeVerdict(claim, researchData, verifiers))
+      .rejects.toThrow('no research evidence');
   });
 });
 

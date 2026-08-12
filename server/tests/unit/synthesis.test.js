@@ -23,7 +23,7 @@ describe('Layer 1: Stage 5 Synthesis Service Unit Tests', () => {
     expect(res.claim_id).toBe(claim.id);
     expect(res.final.verdict).toBe('supported');
     expect(res.final.rationale).toContain('Both independent AI evaluators confirm strong evidence support');
-    expect(res.final.sources_cited).toEqual(['src-001', 'src-002']);
+    expect(res.final.sources_cited).toEqual(['src-001']);
   });
 
   it('yields contradicted when both Grok and Gemini return contradicted', async () => {
@@ -46,6 +46,7 @@ describe('Layer 1: Stage 5 Synthesis Service Unit Tests', () => {
     const res = await synthesizer.synthesizeVerdict(claim, researchData, verifierResults);
     expect(res.final.verdict).toBe('inconclusive');
     expect(res.final.rationale).toContain('Evaluator disagreement between Grok (supported) and Gemini (contradicted)');
+    expect(res.final.limitations).toContain('Degraded result: verification is inconclusive.');
   });
 
   it('yields inconclusive when Grok and Gemini disagree (contradicted vs inconclusive)', async () => {
@@ -56,6 +57,7 @@ describe('Layer 1: Stage 5 Synthesis Service Unit Tests', () => {
 
     const res = await synthesizer.synthesizeVerdict(claim, researchData, verifierResults);
     expect(res.final.verdict).toBe('inconclusive');
+    expect(res.final.limitations).toContain('Degraded result: verification is inconclusive.');
     expect(res.final.rationale).toContain('Evaluator disagreement');
   });
 
@@ -72,16 +74,34 @@ describe('Layer 1: Stage 5 Synthesis Service Unit Tests', () => {
     expect(['inconclusive']).toContain(res.final.verdict);
   });
 
-  it('handles missing or undefined verifier results without throwing', async () => {
+  it('blocks synthesis when a required verifier result is missing', async () => {
     const verifierResultsPartial = {
       grok: makeVerifierResult('grok', 'supported'),
     };
 
-    const res = await synthesizer.synthesizeVerdict(claim, researchData, verifierResultsPartial);
-    expect(res.final.verdict).toBe('inconclusive');
-    expect(res.final.rationale).toBeDefined();
+    await expect(synthesizer.synthesizeVerdict(claim, researchData, verifierResultsPartial))
+      .rejects.toThrow('required verifier result is missing');
+    await expect(synthesizer.synthesizeVerdict(claim, researchData, {}))
+      .rejects.toThrow('required verifier result is missing');
+  });
 
-    const resEmpty = await synthesizer.synthesizeVerdict(claim, researchData, {});
-    expect(resEmpty.final.verdict).toBe('inconclusive');
+  it('blocks synthesis with no retrieved evidence', async () => {
+    const verifierResults = {
+      grok: makeVerifierResult('grok', 'inconclusive', { evidence_ids: [] }),
+      gemini: makeVerifierResult('gemini', 'inconclusive', { evidence_ids: [] }),
+    };
+
+    await expect(synthesizer.synthesizeVerdict(claim, { sources: [] }, verifierResults))
+      .rejects.toThrow('no research evidence');
+  });
+
+  it('blocks a confident verdict that cites no retrieved evidence', async () => {
+    const verifierResults = {
+      grok: makeVerifierResult('grok', 'supported', { evidence_ids: ['src-unknown'] }),
+      gemini: makeVerifierResult('gemini', 'supported', { evidence_ids: ['src-unknown'] }),
+    };
+
+    await expect(synthesizer.synthesizeVerdict(claim, researchData, verifierResults))
+      .rejects.toThrow('without valid evidence');
   });
 });

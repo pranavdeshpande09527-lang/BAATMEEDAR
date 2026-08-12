@@ -281,6 +281,51 @@ export function renderVerdict(verdicts, claims) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   FAILURE CARD
+   ───────────────────────────────────────────────────────────── */
+export function renderFailure(failure) {
+  const stageNames = {
+    input_received: 'Stage 1 — Input Processing',
+    extracting_claims: 'Stage 2 — Claim Extraction',
+    researching: 'Stage 3 — Web Research & Retrieval',
+    verifying: 'Stage 4 — Independent Verification',
+    synthesizing: 'Stage 5 — Editorial Synthesis',
+  };
+
+  const stageLabel = failure?.stage ? (stageNames[failure.stage] || failure.stage.toUpperCase()) : 'Verification Pipeline';
+  const message = failure?.message || 'Verification could not be completed due to a processing failure.';
+  const retryable = failure?.retryable !== false;
+
+  return `
+    <section class="stage-section failure-section" id="stage-failure" style="border-left: 4px solid var(--accent-red, #dc2626); margin-top: var(--sp-4);">
+      <div class="stage-header">
+        <span class="stage-number" style="color: var(--accent-red, #dc2626); font-weight: bold;">VERIFICATION FAILED</span>
+        <span class="stage-title">${escHtml(stageLabel)}</span>
+      </div>
+      <div class="meta-table" style="margin-top: var(--sp-4);">
+        <div class="meta-row">
+          <span class="meta-key">FAILURE REASON</span>
+          <span class="meta-val" style="color: var(--ink-base, #111827); font-weight: 500;">${escHtml(message)}</span>
+        </div>
+        ${failure?.code ? `
+        <div class="meta-row">
+          <span class="meta-key">ERROR CODE</span>
+          <span class="meta-val"><code style="background: var(--bg-subtle, #f3f4f6); padding: 2px 6px; border-radius: 4px;">${escHtml(failure.code)}</code></span>
+        </div>` : ''}
+      </div>
+      <div class="new-verify-row" style="margin-top: var(--sp-6);">
+        ${retryable ? `
+          <button class="btn-primary" onclick="window.BAATMEEDAR.reset()" id="btn-retry-verify" style="margin-right: 12px;">
+            TRY AGAIN ↻
+          </button>` : ''}
+        <button class="btn-secondary" onclick="window.BAATMEEDAR.reset()" id="btn-new-verify-fail">
+          VERIFY ANOTHER STATEMENT
+        </button>
+      </div>
+    </section>`;
+}
+
+/* ─────────────────────────────────────────────────────────────
    Helpers
    ───────────────────────────────────────────────────────────── */
 function escHtml(str) {

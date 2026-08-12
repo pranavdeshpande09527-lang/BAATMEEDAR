@@ -11,10 +11,10 @@ export class StatusPublisher {
     this.runRepository = runRepository;
   }
 
-  async publishStage(runId, stage, status = 'processing', partial = null) {
-    getLogger().info({ runId, stage, status }, 'Publishing workflow stage update');
+  async publishStage(runId, stage, status = 'processing', partial = null, failure = null) {
+    getLogger().info({ runId, stage, status, hasFailure: Boolean(failure) }, 'Publishing workflow stage update');
     if (this.runRepository) {
-      await this.runRepository.updateStage(runId, stage, status, partial);
+      await this.runRepository.updateStage(runId, stage, status, partial, failure);
     }
   }
 }

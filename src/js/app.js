@@ -6,7 +6,7 @@
  */
 
 import { submitVerification, getStatus, getResults, warmUpBackend } from './api.js?v=20260811d';
-import { renderStage1, renderStage2, renderStage3, renderVerdict } from './renderers.js?v=20260811d';
+import { renderStage1, renderStage2, renderStage3, renderVerdict, renderFailure } from './renderers.js?v=20260811d';
 
 /* ─────────────────────────────────────────────────────────────
    State
@@ -220,7 +220,7 @@ async function poll() {
   }
 
   try {
-    const { status, stage } = await getStatus(State.runId);
+    const { status, stage, failure } = await getStatus(State.runId);
     State.pollCount++;
     updateProgress(stage);
 
@@ -230,7 +230,7 @@ async function poll() {
     }
 
     if (status === 'failed' || status === 'error') {
-      showGlobalError('Verification failed on the server. Please try again.');
+      renderFailureCard(failure);
       return;
     }
 
@@ -335,8 +335,18 @@ async function fetchAndRender() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Error Display
+   Error Display & Failure Card
    ───────────────────────────────────────────────────────────── */
+function renderFailureCard(failure) {
+  if (dom.verdictWrap) {
+    dom.verdictWrap.innerHTML = renderFailure(failure);
+    dom.verdictWrap.classList.remove('hidden');
+    dom.verdictWrap.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    showGlobalError(failure?.message || 'Verification failed on the server.');
+  }
+}
+
 function showGlobalError(msg) {
   dom.globalError.innerHTML = `
     <div class="error-box">

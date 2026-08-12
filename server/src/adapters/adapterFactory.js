@@ -45,7 +45,7 @@ export function createAdapters(config = {}, useFakes = false) {
   return {
     gemini: new GeminiAdapter(config.providers?.gemini?.apiKey),
     groq,
-    xai: new XAIAdapter(config.providers?.xai?.apiKey, groq),
+    xai: config.providers?.xai?.apiKey ? new XAIAdapter(config.providers?.xai?.apiKey, groq) : groq,
     tavily: new TavilyAdapter(config.providers?.tavily?.apiKey),
     youtube: new YoutubeAdapter(config.providers?.youtube?.apiKey),
     embedding: new EmbeddingAdapter(config.providers?.gemini?.apiKey),

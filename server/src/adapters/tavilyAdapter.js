@@ -38,8 +38,10 @@ export class TavilyAdapter {
         });
 
         if (!res.ok) {
-          getLogger().warn({ query, status: res.status }, 'Tavily search returned non-ok status');
-          continue;
+          const error = new Error(`Tavily search failed with status ${res.status}`);
+          error.provider = 'tavily';
+          error.status = res.status;
+          throw error;
         }
 
         const data = await res.json();
@@ -59,6 +61,7 @@ export class TavilyAdapter {
         }
       } catch (err) {
         getLogger().error({ err: err.message, query }, 'Tavily search query failed');
+        throw err;
       }
     }
     return results;

@@ -8,6 +8,7 @@
 import { validateModelOutput, VerifierOutputSchema } from '../schemas/modelOutput.js';
 import { buildVerifierPrompt, PROMPT_VERSIONS } from '../schemas/promptTemplates.js';
 import { getLogger } from '../logging/logger.js';
+import { retryWithBackoff } from '../utils/retryWithBackoff.js';
 
 export class XAIAdapter {
   constructor(apiKey, fallbackAdapter = null) {
@@ -36,26 +37,34 @@ export class XAIAdapter {
     const prompt = buildVerifierPrompt('Grok', claim, evidencePacket);
 
     try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
+      const validated = await retryWithBackoff(
+        async () => {
+          const response = await fetch(`${this.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${this.apiKey}`,
+            },
+            body: JSON.stringify({
+              model: this.modelName,
+              messages: [{ role: 'user', content: prompt }],
+              response_format: { type: 'json_object' },
+            }),
+          });
+
+          if (!response.ok) {
+            const err = new Error(`xAI API request failed with status ${response.status}`);
+            err.status = response.status;
+            err.headers = response.headers;
+            throw err;
+          }
+
+          const data = await response.json();
+          const rawJson = JSON.parse(data.choices?.[0]?.message?.content || '{}');
+          return validateModelOutput(VerifierOutputSchema, rawJson, 'Grok/xAI Stage 4 verification');
         },
-        body: JSON.stringify({
-          model: this.modelName,
-          messages: [{ role: 'user', content: prompt }],
-          response_format: { type: 'json_object' },
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`xAI API request failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      const rawJson = JSON.parse(data.choices?.[0]?.message?.content || '{}');
-      const validated = validateModelOutput(VerifierOutputSchema, rawJson, 'Grok/xAI Stage 4 verification');
+        { provider: 'xai' }
+      );
 
       getLogger().info({
         provider: 'xai_grok',

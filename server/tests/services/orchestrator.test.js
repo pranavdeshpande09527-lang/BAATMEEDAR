@@ -197,4 +197,46 @@ describe('Layer 2: Orchestrator Integration & Boundary Tests', () => {
     const status = await runRepository.getStatus(runId, owner);
     expect(status.status).toBe('failed');
   });
+
+  it('fails rather than synthesizing when research returns no evidence', async () => {
+    const fakes = createConfigurableAdapters({ emptySearch: true });
+    const orchestrator = new Orchestrator(fakes);
+    const runId = '88888888-8888-8888-8888-888888888888';
+
+    await runRepository.create({
+      id: runId,
+      input_type: 'text',
+      content: 'Claim with no retrievable evidence.',
+      owner_type: owner.type,
+      owner_id: owner.id,
+    });
+
+    await orchestrator.startRun(runId, { input_type: 'text', content: 'Claim with no retrievable evidence.' });
+
+    const status = await runRepository.getStatus(runId, owner);
+    const results = await runRepository.getResults(runId, owner);
+    expect(status.status).toBe('failed');
+    expect(results.verdicts[0].final).toBeUndefined();
+  });
+
+  it('fails rather than synthesizing when either required verifier fails', async () => {
+    const fakes = createConfigurableAdapters({ failGeminiVerify: true });
+    const orchestrator = new Orchestrator(fakes);
+    const runId = '99999999-9999-9999-9999-999999999999';
+
+    await runRepository.create({
+      id: runId,
+      input_type: 'text',
+      content: 'Claim with an unavailable verifier.',
+      owner_type: owner.type,
+      owner_id: owner.id,
+    });
+
+    await orchestrator.startRun(runId, { input_type: 'text', content: 'Claim with an unavailable verifier.' });
+
+    const status = await runRepository.getStatus(runId, owner);
+    const results = await runRepository.getResults(runId, owner);
+    expect(status.status).toBe('failed');
+    expect(results.verdicts[0].final).toBeUndefined();
+  });
 });

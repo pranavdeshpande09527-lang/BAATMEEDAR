@@ -26,12 +26,13 @@ import {
   PROMPT_VERSIONS,
 } from '../schemas/promptTemplates.js';
 import { getLogger } from '../logging/logger.js';
+import { retryWithBackoff } from '../utils/retryWithBackoff.js';
 
 export class GeminiAdapter {
   constructor(apiKey) {
     this.apiKey = apiKey;
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.modelName = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+    this.modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
   }
 
   /**
@@ -47,27 +48,40 @@ export class GeminiAdapter {
     const prompt = buildClaimExtractionPrompt(inputText);
 
     try {
-      const response = await model.generateContent(prompt);
+      const response = await retryWithBackoff(
+        () => model.generateContent(prompt),
+        { provider: 'gemini' }
+      );
       const text = response.response.text();
       const rawJson = JSON.parse(text);
-      const validated = validateModelOutput(ClaimExtractionOutputSchema, rawJson, 'Gemini claim extraction');
+      const validated = validateModelOutput(
+        ClaimExtractionOutputSchema,
+        rawJson,
+        'Gemini claim extraction'
+      );
 
-      getLogger().info({
-        provider: 'gemini',
-        stage: 'stage_2_extraction',
-        promptVersion: PROMPT_VERSIONS.STAGE_2_EXTRACTION,
-        latencyMs: Date.now() - startTime,
-        claimsExtracted: validated.claims.length,
-      }, 'Gemini claim extraction completed');
+      getLogger().info(
+        {
+          provider: 'gemini',
+          stage: 'stage_2_extraction',
+          promptVersion: PROMPT_VERSIONS.STAGE_2_EXTRACTION,
+          latencyMs: Date.now() - startTime,
+          claimsExtracted: validated.claims.length,
+        },
+        'Gemini claim extraction completed'
+      );
 
       return validated;
     } catch (err) {
-      getLogger().error({
-        provider: 'gemini',
-        stage: 'stage_2_extraction',
-        latencyMs: Date.now() - startTime,
-        err: err.message,
-      }, 'Gemini claim extraction failed');
+      getLogger().error(
+        {
+          provider: 'gemini',
+          stage: 'stage_2_extraction',
+          latencyMs: Date.now() - startTime,
+          err: err.message,
+        },
+        'Gemini claim extraction failed'
+      );
       throw err;
     }
   }
@@ -85,27 +99,40 @@ export class GeminiAdapter {
     const prompt = buildHermesPlanPrompt(claim);
 
     try {
-      const response = await model.generateContent(prompt);
+      const response = await retryWithBackoff(
+        () => model.generateContent(prompt),
+        { provider: 'gemini' }
+      );
       const rawJson = JSON.parse(response.response.text());
-      const validated = validateModelOutput(ResearchPlanOutputSchema, rawJson, 'Hermes research plan');
+      const validated = validateModelOutput(
+        ResearchPlanOutputSchema,
+        rawJson,
+        'Hermes research plan'
+      );
 
-      getLogger().info({
-        provider: 'gemini_hermes',
-        stage: 'stage_3_planning',
-        promptVersion: PROMPT_VERSIONS.STAGE_3_HERMES_PLAN,
-        claimId: claim.id,
-        latencyMs: Date.now() - startTime,
-      }, 'Hermes research plan created');
+      getLogger().info(
+        {
+          provider: 'gemini_hermes',
+          stage: 'stage_3_planning',
+          promptVersion: PROMPT_VERSIONS.STAGE_3_HERMES_PLAN,
+          claimId: claim.id,
+          latencyMs: Date.now() - startTime,
+        },
+        'Hermes research plan created'
+      );
 
       return validated;
     } catch (err) {
-      getLogger().error({
-        provider: 'gemini_hermes',
-        stage: 'stage_3_planning',
-        claimId: claim.id,
-        latencyMs: Date.now() - startTime,
-        err: err.message,
-      }, 'Gemini Hermes research planning failed');
+      getLogger().error(
+        {
+          provider: 'gemini_hermes',
+          stage: 'stage_3_planning',
+          claimId: claim.id,
+          latencyMs: Date.now() - startTime,
+          err: err.message,
+        },
+        'Gemini Hermes research planning failed'
+      );
       throw err;
     }
   }
@@ -123,27 +150,40 @@ export class GeminiAdapter {
     const prompt = buildGeminiAnalysisPrompt(claim, sources);
 
     try {
-      const response = await model.generateContent(prompt);
+      const response = await retryWithBackoff(
+        () => model.generateContent(prompt),
+        { provider: 'gemini' }
+      );
       const rawJson = JSON.parse(response.response.text());
-      const validated = validateModelOutput(AnalysisOutputSchema, rawJson, 'Gemini Stage 3 analysis');
+      const validated = validateModelOutput(
+        AnalysisOutputSchema,
+        rawJson,
+        'Gemini Stage 3 analysis'
+      );
 
-      getLogger().info({
-        provider: 'gemini',
-        stage: 'stage_3_analysis',
-        promptVersion: PROMPT_VERSIONS.STAGE_3_GEMINI_ANALYSIS,
-        claimId: claim.id,
-        latencyMs: Date.now() - startTime,
-      }, 'Gemini Stage 3 analysis completed');
+      getLogger().info(
+        {
+          provider: 'gemini',
+          stage: 'stage_3_analysis',
+          promptVersion: PROMPT_VERSIONS.STAGE_3_GEMINI_ANALYSIS,
+          claimId: claim.id,
+          latencyMs: Date.now() - startTime,
+        },
+        'Gemini Stage 3 analysis completed'
+      );
 
       return validated;
     } catch (err) {
-      getLogger().error({
-        provider: 'gemini',
-        stage: 'stage_3_analysis',
-        claimId: claim.id,
-        latencyMs: Date.now() - startTime,
-        err: err.message,
-      }, 'Gemini Stage 3 analysis failed');
+      getLogger().error(
+        {
+          provider: 'gemini',
+          stage: 'stage_3_analysis',
+          claimId: claim.id,
+          latencyMs: Date.now() - startTime,
+          err: err.message,
+        },
+        'Gemini Stage 3 analysis failed'
+      );
       throw err;
     }
   }
@@ -161,28 +201,41 @@ export class GeminiAdapter {
     const prompt = buildVerifierPrompt('Gemini', claim, evidencePacket);
 
     try {
-      const response = await model.generateContent(prompt);
+      const response = await retryWithBackoff(
+        () => model.generateContent(prompt),
+        { provider: 'gemini' }
+      );
       const rawJson = JSON.parse(response.response.text());
-      const validated = validateModelOutput(VerifierOutputSchema, rawJson, 'Gemini Stage 4 verification');
+      const validated = validateModelOutput(
+        VerifierOutputSchema,
+        rawJson,
+        'Gemini Stage 4 verification'
+      );
 
-      getLogger().info({
-        provider: 'gemini',
-        stage: 'stage_4_verification',
-        promptVersion: PROMPT_VERSIONS.STAGE_4_VERIFIER,
-        claimId: claim.id,
-        verdict: validated.verdict,
-        latencyMs: Date.now() - startTime,
-      }, 'Gemini Stage 4 verification completed');
+      getLogger().info(
+        {
+          provider: 'gemini',
+          stage: 'stage_4_verification',
+          promptVersion: PROMPT_VERSIONS.STAGE_4_VERIFIER,
+          claimId: claim.id,
+          verdict: validated.verdict,
+          latencyMs: Date.now() - startTime,
+        },
+        'Gemini Stage 4 verification completed'
+      );
 
       return validated;
     } catch (err) {
-      getLogger().error({
-        provider: 'gemini',
-        stage: 'stage_4_verification',
-        claimId: claim.id,
-        latencyMs: Date.now() - startTime,
-        err: err.message,
-      }, 'Gemini Stage 4 verification failed');
+      getLogger().error(
+        {
+          provider: 'gemini',
+          stage: 'stage_4_verification',
+          claimId: claim.id,
+          latencyMs: Date.now() - startTime,
+          err: err.message,
+        },
+        'Gemini Stage 4 verification failed'
+      );
       throw err;
     }
   }

@@ -12,6 +12,7 @@ import Groq from 'groq-sdk';
 import { validateModelOutput, AnalysisOutputSchema, VerifierOutputSchema } from '../schemas/modelOutput.js';
 import { buildGroqAnalysisPrompt, buildVerifierPrompt, PROMPT_VERSIONS } from '../schemas/promptTemplates.js';
 import { getLogger } from '../logging/logger.js';
+import { retryWithBackoff } from '../utils/retryWithBackoff.js';
 
 export class GroqAdapter {
   constructor(apiKey) {
@@ -28,11 +29,15 @@ export class GroqAdapter {
     const prompt = buildGroqAnalysisPrompt(claim, sources);
 
     try {
-      const response = await this.groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: this.modelName,
-        response_format: { type: 'json_object' },
-      });
+      const response = await retryWithBackoff(
+        () =>
+          this.groq.chat.completions.create({
+            messages: [{ role: 'user', content: prompt }],
+            model: this.modelName,
+            response_format: { type: 'json_object' },
+          }),
+        { provider: 'groq' }
+      );
 
       const rawJson = JSON.parse(response.choices[0]?.message?.content || '{}');
       const validated = validateModelOutput(AnalysisOutputSchema, rawJson, 'Groq Stage 3 analysis');
@@ -66,11 +71,15 @@ export class GroqAdapter {
     const prompt = buildVerifierPrompt('Groq', claim, evidencePacket);
 
     try {
-      const response = await this.groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: this.modelName,
-        response_format: { type: 'json_object' },
-      });
+      const response = await retryWithBackoff(
+        () =>
+          this.groq.chat.completions.create({
+            messages: [{ role: 'user', content: prompt }],
+            model: this.modelName,
+            response_format: { type: 'json_object' },
+          }),
+        { provider: 'groq' }
+      );
 
       const rawJson = JSON.parse(response.choices[0]?.message?.content || '{}');
       const validated = validateModelOutput(VerifierOutputSchema, rawJson, 'Groq Stage 4 verification');

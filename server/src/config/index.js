@@ -44,7 +44,7 @@ const envSchema = z.object({
   // CORS
   CORS_ORIGINS: z
     .string()
-    .default('http://localhost:5500,https://baatmeedar.vercel.app,https://prompathon2026.web.app,https://prompathon2026.firebaseapp.com,https://baatmeedar.com,http://localhost:5000,http://localhost:3000,http://127.0.0.1:5500,http://127.0.0.1:5000'),
+    .default('http://localhost:5500,https://baatmeedar.vercel.app,https://baatmeedar.com,http://localhost:5000,http://localhost:3000,http://127.0.0.1:5500,http://127.0.0.1:5000'),
 
   // Rate Limits
   RATE_LIMIT_VERIFY_MAX: z.coerce.number().int().positive().default(DEFAULTS.rateLimits.verify.max),

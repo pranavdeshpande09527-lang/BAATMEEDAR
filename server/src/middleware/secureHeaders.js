@@ -29,10 +29,8 @@ export function isOriginAllowed(origin, allowedOrigins = []) {
     }
   }
 
-  // Always permit official Firebase hosting domains, Vercel deployments, and local development
+  // Always permit official domains, Vercel deployments, and local development
   if (
-    /^https:\/\/prompathon2026(--[a-z0-9-]+)?\.web\.app$/.test(normalizedOrigin) ||
-    /^https:\/\/prompathon2026(--[a-z0-9-]+)?\.firebaseapp\.com$/.test(normalizedOrigin) ||
     /^https:\/\/(www\.)?baatmeedar\.com$/.test(normalizedOrigin) ||
     /^https:\/\/([a-z0-9-]+\.)?vercel\.app$/.test(normalizedOrigin) ||
     /^http:\/\/localhost(:[0-9]+)?$/.test(normalizedOrigin) ||
@@ -56,7 +54,7 @@ export function secureHeadersMiddleware(allowedOrigins = []) {
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:'],
-        connectSrc: ["'self'", ...allowedOrigins, 'https://*.web.app', 'https://*.firebaseapp.com'],
+        connectSrc: ["'self'", ...allowedOrigins],
       },
     },
     crossOriginEmbedderPolicy: false,

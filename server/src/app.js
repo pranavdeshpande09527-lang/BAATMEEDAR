@@ -44,8 +44,6 @@ export function createApp(opts = {}) {
   const corsOrigins = config?.server?.corsOrigins || [
     'http://localhost:5500',
     'https://baatmeedar.vercel.app',
-    'https://prompathon2026.web.app',
-    'https://prompathon2026.firebaseapp.com',
     'https://baatmeedar.com',
   ];
   const verifyLimitOpts = config?.server?.rateLimits?.verify || { max: 10, windowMs: 60000 };

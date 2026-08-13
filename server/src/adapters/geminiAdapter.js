@@ -36,6 +36,20 @@ export class GeminiAdapter {
   }
 
   /**
+   * Extract the HTTP status code embedded in a Google GenAI SDK error.
+   * The SDK surfaces it as err.status (number) or buries it in err.message
+   * as "[400 Bad Request]" or similar. Returns null if not determinable.
+   * @param {Error} err
+   * @returns {number | null}
+   */
+  _extractHttpStatus(err) {
+    if (err?.status && typeof err.status === 'number') return err.status;
+    if (err?.statusCode && typeof err.statusCode === 'number') return err.statusCode;
+    const match = typeof err?.message === 'string' && err.message.match(/\b(400|401|403|404|429|500|503)\b/);
+    return match ? Number(match[0]) : null;
+  }
+
+  /**
    * Stage 2: Extract atomic factual claims from raw input text.
    */
   async extractClaims(inputText) {
@@ -78,6 +92,7 @@ export class GeminiAdapter {
           provider: 'gemini',
           stage: 'stage_2_extraction',
           latencyMs: Date.now() - startTime,
+          providerHttpStatus: this._extractHttpStatus(err),
           err: err.message,
         },
         'Gemini claim extraction failed'
@@ -129,6 +144,7 @@ export class GeminiAdapter {
           stage: 'stage_3_planning',
           claimId: claim.id,
           latencyMs: Date.now() - startTime,
+          providerHttpStatus: this._extractHttpStatus(err),
           err: err.message,
         },
         'Gemini Hermes research planning failed'
@@ -180,6 +196,7 @@ export class GeminiAdapter {
           stage: 'stage_3_analysis',
           claimId: claim.id,
           latencyMs: Date.now() - startTime,
+          providerHttpStatus: this._extractHttpStatus(err),
           err: err.message,
         },
         'Gemini Stage 3 analysis failed'
@@ -232,6 +249,7 @@ export class GeminiAdapter {
           stage: 'stage_4_verification',
           claimId: claim.id,
           latencyMs: Date.now() - startTime,
+          providerHttpStatus: this._extractHttpStatus(err),
           err: err.message,
         },
         'Gemini Stage 4 verification failed'

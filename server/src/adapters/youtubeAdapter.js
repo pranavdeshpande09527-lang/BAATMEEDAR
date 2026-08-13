@@ -8,6 +8,13 @@
  * Note: this.apiKey (YOUTUBE_API_KEY) is retained for future use fetching
  * video metadata via the YouTube Data API v3 videos.list endpoint.
  * It cannot fetch captions for third-party videos — that requires channel-owner OAuth.
+ *
+ * ⚠️  RENDER EGRESS NOTE: The youtube-transcript library makes an HTTP request
+ * to YouTube's timedtext endpoint. Render's shared egress IPs may be rate-limited
+ * or blocked by YouTube's anti-scraping measures. If `extraction_status` is
+ * `network_error`, the failure is a connectivity issue, not a missing caption.
+ * Consider switching to a transcript proxy (e.g. Supadata, Kome.ai) if this
+ * occurs consistently in production.
  */
 
 import { YoutubeTranscript } from 'youtube-transcript';
@@ -38,10 +45,36 @@ export class YoutubeAdapter {
   }
 
   /**
+   * Return true if the error looks like a missing/disabled-captions error
+   * (as opposed to a network / DNS / TLS failure).
+   * The youtube-transcript library throws with messages like:
+   *   "Transcript is disabled on this video"
+   *   "Could not get the list of transcripts"
+   *   "No transcripts were found"
+   * @param {Error} err
+   */
+  _isTranscriptUnavailableError(err) {
+    const msg = (err?.message || '').toLowerCase();
+    return (
+      msg.includes('transcript') ||
+      msg.includes('no transcripts') ||
+      msg.includes('disabled') ||
+      msg.includes('could not retrieve') ||
+      msg.includes('too many requests') // YouTube 429 → treat as unavailable, not network failure
+    );
+  }
+
+  /**
    * Fetch the transcript for a YouTube video URL.
-   * Returns extraction_status: 'success' with joined raw_text on success,
-   * or extraction_status: 'unavailable_transcript' with empty raw_text when
-   * captions are disabled, private, or otherwise inaccessible.
+   *
+   * Returns one of three extraction_status values:
+   *   'success'               — transcript fetched and has content
+   *   'unavailable_transcript' — captions disabled / private / not available
+   *   'network_error'         — DNS/TLS/egress failure reaching YouTube
+   *
+   * The orchestrator maps 'network_error' to a user-facing message that
+   * correctly identifies this as a server connectivity issue rather than
+   * a missing caption.
    */
   async getTranscript(urlStr) {
     const videoId = this.extractVideoId(urlStr);
@@ -63,13 +96,33 @@ export class YoutubeAdapter {
         raw_text: rawText,
       };
     } catch (err) {
-      getLogger().error({ err: err.message, videoId }, 'YouTube transcript retrieval failed');
+      const isTranscriptErr = this._isTranscriptUnavailableError(err);
+      const extractionStatus = isTranscriptErr ? 'unavailable_transcript' : 'network_error';
+
+      if (isTranscriptErr) {
+        // Expected: captions are disabled or not available for this video
+        getLogger().warn(
+          { videoId, err: err.message },
+          'YouTube transcript not available for video (captions disabled or private)'
+        );
+      } else {
+        // Unexpected: DNS, TLS, ECONNREFUSED, or Render egress block
+        getLogger().error(
+          {
+            videoId,
+            egress_failure: true,
+            err: err.message,
+          },
+          'YouTube transcript retrieval failed due to network/egress error — likely a Render outbound connectivity issue'
+        );
+      }
+
       return {
         url: urlStr,
         video_id: videoId,
         publisher: 'YouTube',
         retrieved_at: new Date().toISOString(),
-        extraction_status: 'unavailable_transcript',
+        extraction_status: extractionStatus,
         raw_text: '',
       };
     }

@@ -51,6 +51,7 @@ export class Orchestrator {
         code: 'provider_rate_limited',
         message: `Research or verification is temporarily unavailable because an AI provider rate limit was reached (${err.provider || 'provider'}).`,
         retryable: true,
+        provider_detail: err.message,
       };
     }
 
@@ -60,6 +61,7 @@ export class Orchestrator {
         code: 'provider_deadline_exceeded',
         message: 'Processing timed out waiting for AI provider response. Please try again.',
         retryable: true,
+        provider_detail: err.message,
       };
     }
 
@@ -69,15 +71,21 @@ export class Orchestrator {
         code: 'database_unavailable',
         message: 'A database storage error occurred while processing this request.',
         retryable: false,
+        provider_detail: err.message,
       };
     }
 
-    if (stage === 'input_received' || /transcript|extract readable|ssrf|url/i.test(msg)) {
+    if (stage === 'input_received' || /transcript|extract readable|ssrf|url|network_error/i.test(msg)) {
+      // Distinguish YouTube network/egress failures from genuine missing captions
+      const isEgressFailure = /network_error|egress|econnrefused|dns|fetch failed/i.test(msg);
       return {
         stage: 'input_received',
         code: 'input_extraction_failed',
-        message: msg || 'Failed to extract readable content from the provided input.',
-        retryable: false,
+        message: isEgressFailure
+          ? 'The content could not be reached from the server. This may be a network connectivity issue — please try again or use direct text input.'
+          : msg || 'Failed to extract readable content from the provided input.',
+        retryable: isEgressFailure,
+        provider_detail: msg,
       };
     }
 
@@ -87,6 +95,7 @@ export class Orchestrator {
         code: 'research_failed',
         message: 'No reliable web sources could be retrieved to evaluate the claims.',
         retryable: true,
+        provider_detail: msg,
       };
     }
 
@@ -96,6 +105,7 @@ export class Orchestrator {
         code: 'verification_failed',
         message: 'Independent AI verification could not be completed for the retrieved evidence.',
         retryable: true,
+        provider_detail: msg,
       };
     }
 
@@ -103,8 +113,10 @@ export class Orchestrator {
       return {
         stage: 'extracting_claims',
         code: 'extraction_failed',
+        // Preserve raw SDK error so it is visible in Render logs via the run record
         message: 'Factual claims could not be extracted from the provided input.',
         retryable: true,
+        provider_detail: msg,
       };
     }
 
@@ -113,6 +125,7 @@ export class Orchestrator {
       code: 'internal_error',
       message: 'Verification failed due to an internal system error.',
       retryable: false,
+      provider_detail: msg,
     };
   }
 
@@ -132,6 +145,9 @@ export class Orchestrator {
       await this.statusPublisher.publishStage(runId, 'input_received', 'processing');
       const inputRecord = await this.inputService.processInput(inputPayload.input_type, inputPayload.content);
 
+      if (inputRecord.extraction_status === 'network_error') {
+        throw new Error('network_error: Could not reach the content source from the server (egress failure).');
+      }
       if (inputRecord.extraction_status === 'unavailable_transcript') {
         throw new Error('Transcript is unavailable for this YouTube video.');
       }

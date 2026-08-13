@@ -88,7 +88,10 @@ export class TavilyAdapter {
       });
 
       if (!res.ok) {
-        getLogger().warn({ status: res.status, url }, 'Tavily extract returned non-ok HTTP status');
+        getLogger().warn(
+          { status: res.status, url, providerHttpStatus: res.status },
+          'Tavily extract returned non-ok HTTP status'
+        );
         return {
           url,
           raw_text: '',
@@ -116,6 +119,25 @@ export class TavilyAdapter {
       };
     } catch (err) {
       if (err.code === 'SSRF_BLOCKED' || err.status === 400) throw err;
+
+      // Re-throw fetch-level errors (DNS, TLS, ECONNREFUSED, Render egress blocks)
+      // so the orchestrator captures the real error in the run record.
+      // These are NOT normal "extraction failed" cases — they indicate a
+      // server-side connectivity problem that swallowing would hide.
+      const isFetchError =
+        err.cause?.code === 'ECONNREFUSED' ||
+        err.cause?.code === 'ENOTFOUND' ||
+        err.cause?.code === 'ETIMEDOUT' ||
+        /fetch failed|network|econnrefused|enotfound|etimedout/i.test(err.message);
+
+      if (isFetchError) {
+        getLogger().error(
+          { err: err.message, url, egress_failure: true },
+          'Tavily extract failed with network/egress error — re-throwing for orchestrator'
+        );
+        throw err;
+      }
+
       getLogger().error({ err: err.message, url }, 'Tavily extract failed');
       return {
         url,

@@ -9,6 +9,7 @@ import { validateModelOutput, VerifierOutputSchema } from '../schemas/modelOutpu
 import { buildVerifierPrompt, PROMPT_VERSIONS } from '../schemas/promptTemplates.js';
 import { getLogger } from '../logging/logger.js';
 import { retryWithBackoff } from '../utils/retryWithBackoff.js';
+import { parseJsonFromModelOutput } from '../utils/parseJson.js';
 
 export class XAIAdapter {
   constructor(apiKey, fallbackAdapter = null) {
@@ -60,7 +61,7 @@ export class XAIAdapter {
           }
 
           const data = await response.json();
-          const rawJson = JSON.parse(data.choices?.[0]?.message?.content || '{}');
+          const rawJson = parseJsonFromModelOutput(data.choices?.[0]?.message?.content || '{}');
           return validateModelOutput(VerifierOutputSchema, rawJson, 'Grok/xAI Stage 4 verification');
         },
         { provider: 'xai' }

@@ -13,6 +13,7 @@ import { validateModelOutput, AnalysisOutputSchema, VerifierOutputSchema } from 
 import { buildGroqAnalysisPrompt, buildVerifierPrompt, PROMPT_VERSIONS } from '../schemas/promptTemplates.js';
 import { getLogger } from '../logging/logger.js';
 import { retryWithBackoff } from '../utils/retryWithBackoff.js';
+import { parseJsonFromModelOutput } from '../utils/parseJson.js';
 
 export class GroqAdapter {
   constructor(apiKey) {
@@ -39,7 +40,7 @@ export class GroqAdapter {
         { provider: 'groq' }
       );
 
-      const rawJson = JSON.parse(response.choices[0]?.message?.content || '{}');
+      const rawJson = parseJsonFromModelOutput(response.choices[0]?.message?.content || '{}');
       const validated = validateModelOutput(AnalysisOutputSchema, rawJson, 'Groq Stage 3 analysis');
 
       getLogger().info({
@@ -81,7 +82,7 @@ export class GroqAdapter {
         { provider: 'groq' }
       );
 
-      const rawJson = JSON.parse(response.choices[0]?.message?.content || '{}');
+      const rawJson = parseJsonFromModelOutput(response.choices[0]?.message?.content || '{}');
       const validated = validateModelOutput(VerifierOutputSchema, rawJson, 'Groq Stage 4 verification');
 
       getLogger().info({

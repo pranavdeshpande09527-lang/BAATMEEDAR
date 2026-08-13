@@ -27,6 +27,7 @@ import {
 } from '../schemas/promptTemplates.js';
 import { getLogger } from '../logging/logger.js';
 import { retryWithBackoff } from '../utils/retryWithBackoff.js';
+import { parseJsonFromModelOutput } from '../utils/parseJson.js';
 
 export class GeminiAdapter {
   constructor(apiKey, modelName = null) {
@@ -67,7 +68,7 @@ export class GeminiAdapter {
         { provider: 'gemini', maxRetries: 2, deadlineMs: 30000 }
       );
       const text = response.response.text();
-      const rawJson = JSON.parse(text);
+      const rawJson = parseJsonFromModelOutput(text);
       const validated = validateModelOutput(
         ClaimExtractionOutputSchema,
         rawJson,
@@ -118,7 +119,7 @@ export class GeminiAdapter {
         () => model.generateContent(prompt),
         { provider: 'gemini' }
       );
-      const rawJson = JSON.parse(response.response.text());
+      const rawJson = parseJsonFromModelOutput(response.response.text());
       const validated = validateModelOutput(
         ResearchPlanOutputSchema,
         rawJson,
@@ -170,7 +171,7 @@ export class GeminiAdapter {
         () => model.generateContent(prompt),
         { provider: 'gemini' }
       );
-      const rawJson = JSON.parse(response.response.text());
+      const rawJson = parseJsonFromModelOutput(response.response.text());
       const validated = validateModelOutput(
         AnalysisOutputSchema,
         rawJson,
@@ -222,7 +223,7 @@ export class GeminiAdapter {
         () => model.generateContent(prompt),
         { provider: 'gemini' }
       );
-      const rawJson = JSON.parse(response.response.text());
+      const rawJson = parseJsonFromModelOutput(response.response.text());
       const validated = validateModelOutput(
         VerifierOutputSchema,
         rawJson,

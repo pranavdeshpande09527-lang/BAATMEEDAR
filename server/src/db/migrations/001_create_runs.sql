@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS verification_runs (
   owner_type VARCHAR(20) NOT NULL CHECK (owner_type IN ('guest', 'authenticated')),
   owner_id VARCHAR(255) NOT NULL,
   status VARCHAR(20) NOT NULL CHECK (status IN ('accepted', 'processing', 'complete', 'partial', 'cancelled', 'failed')),
-  current_stage VARCHAR(30) NOT NULL CHECK (current_stage IN ('accepted', 'input_received', 'extracting_claims', 'researching', 'verifying', 'synthesizing', 'complete')),
+  current_stage VARCHAR(30) NOT NULL CHECK (current_stage IN ('accepted', 'input_received', 'extracting_claims', 'researching', 'verifying', 'synthesizing', 'complete', 'failed')),
   idempotency_key VARCHAR(255),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

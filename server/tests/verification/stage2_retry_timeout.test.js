@@ -54,7 +54,7 @@ describe('Stage 2 — Gemini Retries, Rate Limit & Deadline Protection', () => {
 
     expect(savedStatus).not.toBeNull();
     expect(savedStatus.status).toBe('failed');
-    expect(savedStatus.stage).toBe('failed');
+    expect(savedStatus.stage).toBe('extracting_claims');
     expect(savedStatus.failure).toBeDefined();
     expect(savedStatus.failure.code).toBe('provider_deadline_exceeded');
     expect(savedStatus.failure.message).toContain('Processing timed out waiting for AI provider response');

@@ -205,7 +205,7 @@ export class Orchestrator {
     } catch (err) {
       const failureInfo = this.#classifyError(err, activeStage);
       logger.error({ runId, activeStage, err: err.message, failureInfo }, 'Verification run failed');
-      await this.statusPublisher.publishStage(runId, 'failed', 'failed', null, failureInfo);
+      await this.statusPublisher.publishStage(runId, activeStage, 'failed', null, failureInfo);
       await auditLog({ event: 'stage_failed', run_id: runId, details: { error: err.message, failure: failureInfo } });
     }
   }

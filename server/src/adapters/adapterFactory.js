@@ -43,7 +43,7 @@ export function createAdapters(config = {}, useFakes = false) {
   const groq = new GroqAdapter(config.providers?.groq?.apiKey);
 
   return {
-    gemini: new GeminiAdapter(config.providers?.gemini?.apiKey),
+    gemini: new GeminiAdapter(config.providers?.gemini?.apiKey, config.providers?.gemini?.model),
     groq,
     xai: config.providers?.xai?.apiKey ? new XAIAdapter(config.providers?.xai?.apiKey, groq) : groq,
     tavily: new TavilyAdapter(config.providers?.tavily?.apiKey),

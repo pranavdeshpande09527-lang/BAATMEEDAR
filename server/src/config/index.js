@@ -31,6 +31,7 @@ const envSchema = z.object({
 
   // AI Providers
   GEMINI_API_KEY: z.string().min(1).default(isTestEnv ? 'test-gemini-key' : undefined),
+  GEMINI_MODEL: z.string().default('gemini-3.5-flash'),
   GROQ_API_KEY: z.string().min(1).default(isTestEnv ? 'test-groq-key' : undefined),
   XAI_API_KEY: z.string().default(isTestEnv ? 'test-xai-key' : ''),
 
@@ -97,7 +98,10 @@ export const config = Object.freeze({
   }),
 
   providers: Object.freeze({
-    gemini: Object.freeze({ apiKey: env.GEMINI_API_KEY }),
+    gemini: Object.freeze({
+      apiKey: env.GEMINI_API_KEY,
+      model: env.GEMINI_MODEL,
+    }),
     groq: Object.freeze({ apiKey: env.GROQ_API_KEY }),
     xai: Object.freeze({ apiKey: env.XAI_API_KEY }),
     tavily: Object.freeze({ apiKey: env.TAVILY_API_KEY }),

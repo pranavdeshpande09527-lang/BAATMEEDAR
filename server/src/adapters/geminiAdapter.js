@@ -29,10 +29,10 @@ import { getLogger } from '../logging/logger.js';
 import { retryWithBackoff } from '../utils/retryWithBackoff.js';
 
 export class GeminiAdapter {
-  constructor(apiKey) {
+  constructor(apiKey, modelName = null) {
     this.apiKey = apiKey;
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+    this.modelName = modelName || process.env.GEMINI_MODEL || 'gemini-3.5-flash';
   }
 
   /**

@@ -15,12 +15,13 @@ export class ClaimExtractionService {
     this.gemini = adapters.gemini;
   }
 
-  async extractClaims(rawText) {
+  async extractClaims(rawText, runId = null) {
     getLogger().info('Extracting claims with Gemini');
     const result = await this.gemini.extractClaims(rawText);
+    const prefix = runId ? `${runId.slice(0, 8)}-` : '';
     return {
       claims: result.claims.map((c, i) => ({
-        id: c.id || `clm-${String(i + 1).padStart(3, '0')}`,
+        id: `${prefix}clm-${String(i + 1).padStart(3, '0')}`,
         text: c.text,
         domain: c.domain || 'General',
         context: c.context || '',

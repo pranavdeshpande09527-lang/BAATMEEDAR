@@ -88,12 +88,23 @@ export class TavilyAdapter {
       });
 
       if (!res.ok) {
-        throw new Error(`Tavily extraction failed with status ${res.status}`);
+        getLogger().warn({ status: res.status, url }, 'Tavily extract returned non-ok HTTP status');
+        return {
+          url,
+          raw_text: '',
+          title: '',
+          publisher: this._extractPublisher(url),
+          retrieved_at: new Date().toISOString(),
+          extraction_status: 'failed',
+        };
       }
 
       const data = await res.json();
       const result = data.results?.[0];
-      const rawText = result?.raw_content || result?.content || '';
+      let rawText = (result?.raw_content || result?.content || '').trim();
+      if (rawText.length > 15000) {
+        rawText = rawText.slice(0, 15000);
+      }
 
       return {
         url,
@@ -104,8 +115,16 @@ export class TavilyAdapter {
         extraction_status: rawText.trim() ? 'success' : 'failed',
       };
     } catch (err) {
+      if (err.code === 'SSRF_BLOCKED' || err.status === 400) throw err;
       getLogger().error({ err: err.message, url }, 'Tavily extract failed');
-      throw err;
+      return {
+        url,
+        raw_text: '',
+        title: '',
+        publisher: this._extractPublisher(url),
+        retrieved_at: new Date().toISOString(),
+        extraction_status: 'failed',
+      };
     }
   }
 

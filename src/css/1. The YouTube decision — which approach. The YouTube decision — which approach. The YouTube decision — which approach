@@ -1,0 +1,10 @@
+1. The YouTube decision — which approach did you go with for the transcript fetch (unofficial scraping / a third-party transcript API / something else), and is it pulling a real transcript now, or is YouTube still deferred? This was the one blocking item, so I want to know what's actually live before treating that path as done.
+
+2. Live evidence for each of the three paths, run through the actual Vercel frontend → Render backend — for each, the response body (or Network tab payload) from POST /verify and the eventual GET /verify/:id/results:
+
+Direct statement
+Article link
+YouTube link
+
+3. Anything you saw in the browser console or Render logs while testing, even if it passed — helps me confirm the CORS/session wiring is behaving as expected, not just that it didn't visibly break.
+

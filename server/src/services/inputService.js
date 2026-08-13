@@ -24,6 +24,9 @@ export class InputService {
     getLogger().info({ inputType }, 'Processing Stage 1 input');
 
     if (inputType === 'text') {
+      if (!content || !content.trim()) {
+        throw new Error('Statement content cannot be empty.');
+      }
       return {
         type: 'text',
         content,
@@ -54,6 +57,7 @@ export class InputService {
         type: 'youtube',
         content,
         source_url: content,
+        video_id: transcript.video_id || null,
         publisher: transcript.publisher,
         retrieved_at: transcript.retrieved_at,
         extraction_status: transcript.extraction_status,

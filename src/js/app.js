@@ -174,6 +174,20 @@ async function handleSubmit(e) {
 
   if (!validate()) return;
 
+  // Clear any existing global errors and previous stage containers
+  if (dom.globalError) {
+    dom.globalError.innerHTML = '';
+    dom.globalError.classList.add('hidden');
+  }
+  dom.stage1Wrap.innerHTML = '';
+  dom.stage2Wrap.innerHTML = '';
+  dom.stage3Wrap.innerHTML = '';
+  dom.verdictWrap.innerHTML = '';
+  dom.stage1Wrap.classList.add('hidden');
+  dom.stage2Wrap.classList.add('hidden');
+  dom.stage3Wrap.classList.add('hidden');
+  dom.verdictWrap.classList.add('hidden');
+
   const type    = getActiveType();
   const content = getInputValue();
 
@@ -225,9 +239,25 @@ async function poll() {
   }
 
   try {
-    const { status, stage, failure } = await getStatus(State.runId);
+    const { status, stage, partial, failure } = await getStatus(State.runId);
     State.pollCount++;
     updateProgress(stage);
+
+    // Progressively render available stage data during polling
+    if (partial) {
+      if (partial.input && dom.stage1Wrap.classList.contains('hidden')) {
+        dom.stage1Wrap.innerHTML = renderStage1(partial.input);
+        dom.stage1Wrap.classList.remove('hidden');
+      }
+      if (partial.claims && dom.stage2Wrap.classList.contains('hidden')) {
+        dom.stage2Wrap.innerHTML = renderStage2(partial.claims, partial.removed_opinions);
+        dom.stage2Wrap.classList.remove('hidden');
+      }
+      if (partial.research && dom.stage3Wrap.classList.contains('hidden')) {
+        dom.stage3Wrap.innerHTML = renderStage3(partial.research, partial.claims || []);
+        dom.stage3Wrap.classList.remove('hidden');
+      }
+    }
 
     if (status === 'complete') {
       await fetchAndRender();

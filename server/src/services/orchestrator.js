@@ -141,21 +141,24 @@ export class Orchestrator {
 
       // Stage 2: Claim Extraction — not fault-tolerant; no claims = nothing to verify
       activeStage = 'extracting_claims';
-      await this.statusPublisher.publishStage(runId, 'extracting_claims', 'processing');
-      const extraction = await this.claimExtractor.extractClaims(inputRecord.raw_text_preview);
+      await this.statusPublisher.publishStage(runId, 'extracting_claims', 'processing', { input: inputRecord });
+      const extraction = await this.claimExtractor.extractClaims(inputRecord.raw_text_preview, runId);
 
       await this.repo.saveClaims(runId, extraction.claims, extraction.removed_opinions);
       await auditLog({ event: 'stage_completed', run_id: runId, details: { stage: 'extracting_claims', claims_count: extraction.claims.length } });
 
       if (!extraction.claims.length) {
         logger.warn({ runId }, 'No factual claims extracted from input');
-        await this.statusPublisher.publishStage(runId, 'complete', 'complete');
+        await this.statusPublisher.publishStage(runId, 'complete', 'complete', { claims: [], removed_opinions: extraction.removed_opinions });
         return;
       }
 
       // Stage 3: Research per claim (concurrently up to 5 claims max).
       activeStage = 'researching';
-      await this.statusPublisher.publishStage(runId, 'researching', 'processing');
+      await this.statusPublisher.publishStage(runId, 'researching', 'processing', {
+        claims: extraction.claims,
+        removed_opinions: extraction.removed_opinions,
+      });
       const targetClaims = extraction.claims.slice(0, 5);
       const researchDataList = await Promise.all(
         targetClaims.map(async (claim) => {
@@ -168,7 +171,7 @@ export class Orchestrator {
 
       // Stage 4: both independent verifiers are required before synthesis (concurrent across claims).
       activeStage = 'verifying';
-      await this.statusPublisher.publishStage(runId, 'verifying', 'processing');
+      await this.statusPublisher.publishStage(runId, 'verifying', 'processing', { research: researchDataList });
       const verificationList = await Promise.all(
         targetClaims.map(async (claim, i) => {
           const researchData = researchDataList[i];

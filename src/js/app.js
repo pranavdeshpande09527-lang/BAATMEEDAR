@@ -373,6 +373,14 @@ async function fetchAndRender() {
    Error Display & Failure Card
    ───────────────────────────────────────────────────────────── */
 function renderFailureCard(failure) {
+  clearTimeout(State.pollTimer);
+  setSubmitLoading(false);
+  if (dom.wakeupNotice) dom.wakeupNotice.classList.add('hidden');
+  if (dom.globalError) {
+    dom.globalError.innerHTML = '';
+    dom.globalError.classList.add('hidden');
+  }
+
   if (dom.verdictWrap) {
     dom.verdictWrap.innerHTML = renderFailure(failure);
     dom.verdictWrap.classList.remove('hidden');

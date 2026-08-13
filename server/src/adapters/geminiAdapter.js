@@ -50,7 +50,7 @@ export class GeminiAdapter {
     try {
       const response = await retryWithBackoff(
         () => model.generateContent(prompt),
-        { provider: 'gemini' }
+        { provider: 'gemini', maxRetries: 2, deadlineMs: 30000 }
       );
       const text = response.response.text();
       const rawJson = JSON.parse(text);

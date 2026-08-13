@@ -32,7 +32,7 @@ export class GeminiAdapter {
   constructor(apiKey) {
     this.apiKey = apiKey;
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.modelName = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+    this.modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
   }
 
   /**

@@ -5,8 +5,8 @@
  * 1. Request ID (correlation_id)
  * 2. Secure headers & CORS
  * 3. Body limits & JSON parsing
- * 4. Guest session (cookie management)
- * 5. Authenticate (optional JWT extraction)
+ * 4. Authentication (optional JWT extraction — must run before guest session)
+ * 5. Guest session (skips creation when req.principal is already authenticated)
  * 6. Routes (verify, health, auth, account)
  * 7. Error handler (error translation & redaction)
  */
@@ -43,6 +43,7 @@ export function createApp(opts = {}) {
 
   const corsOrigins = config?.server?.corsOrigins || [
     'http://localhost:5500',
+    'https://baatmeedar.vercel.app',
     'https://prompathon2026.web.app',
     'https://prompathon2026.firebaseapp.com',
     'https://baatmeedar.com',
@@ -63,11 +64,11 @@ export function createApp(opts = {}) {
   // 4. Body limits
   app.use(bodyLimitsMiddleware());
 
-  // 5. Guest session
-  app.use(guestSessionMiddleware(guestTtl));
-
-  // 6. Authentication (non-blocking JWT extraction)
+  // 5. Authentication (non-blocking JWT extraction — must run before guest session)
   app.use(authenticateMiddleware());
+
+  // 6. Guest session (skips creation when req.principal is already set)
+  app.use(guestSessionMiddleware(guestTtl));
 
   // Rate limiters
   const vRateLimiter = verifyRateLimiter(verifyLimitOpts);

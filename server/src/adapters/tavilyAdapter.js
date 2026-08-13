@@ -68,7 +68,9 @@ export class TavilyAdapter {
   }
 
   /**
-   * Extract article content from a specific URL
+   * Extract article content from a specific URL.
+   * extraction_status is 'failed' when raw_text is empty (e.g. paywalled /
+   * JS-rendered pages that return a result object with no readable content).
    */
   async extract(url) {
     if (!this._isSafeUrl(url)) {
@@ -91,14 +93,15 @@ export class TavilyAdapter {
 
       const data = await res.json();
       const result = data.results?.[0];
+      const rawText = result?.raw_content || result?.content || '';
 
       return {
         url,
-        raw_text: result?.raw_content || result?.content || '',
+        raw_text: rawText,
         title: result?.title || '',
         publisher: this._extractPublisher(url),
         retrieved_at: new Date().toISOString(),
-        extraction_status: result ? 'success' : 'failed',
+        extraction_status: rawText.trim() ? 'success' : 'failed',
       };
     } catch (err) {
       getLogger().error({ err: err.message, url }, 'Tavily extract failed');

@@ -145,7 +145,12 @@ function isValidUrl(str) {
 function isYoutubeUrl(str) {
   try {
     const u = new URL(str);
-    return u.hostname === 'www.youtube.com' || u.hostname === 'youtube.com' || u.hostname === 'youtu.be';
+    return (
+      u.hostname === 'www.youtube.com' ||
+      u.hostname === 'youtube.com'     ||
+      u.hostname === 'm.youtube.com'   ||
+      u.hostname === 'youtu.be'
+    );
   } catch { return false; }
 }
 

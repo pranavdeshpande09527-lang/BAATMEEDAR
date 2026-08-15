@@ -75,3 +75,16 @@
   left: calc(-1 * var(--sp-3) - 2px);
   color: var(--rule-light);
 }
+
+/* ABOUT navigation link inside the subheader */
+.subheader-nav-link {
+  color: inherit;
+  text-decoration: none;
+  letter-spacing: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+  text-transform: inherit;
+}
+.subheader-nav-link:hover {
+  color: var(--red);
+}
